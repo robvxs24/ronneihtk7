@@ -1,6 +1,6 @@
 -- ==============================================================================
 --  RONNEI HUB - 100% VIETNAMESE + DYNAMIC COUNTER TRANSLATOR + HIGH CONTRAST
---  + BEST PET TRACKER (TÍCH HỢP VÀO VÒNG LẶP CHÍNH)
+--  + BEST PET TRACKER (CHỦ ĐỘNG TẠO VÀ CHÈN VÀO UI)
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -38,7 +38,7 @@ local THEME = {
     FontBold      = Enum.Font.GothamBold
 }
 
--- ================== BEST PET TRACKER - TÍCH HỢP ==================
+-- ================== BEST PET TRACKER - TẠO CHỦ ĐỘNG ==================
 
 -- Bảng màu theo độ hiếm
 local RARITY_COLORS = {
@@ -73,14 +73,6 @@ local currentBestPet = {
     rarity = "Unknown",
     image = "rbxassetid://125111940452696",
     tier = 0
-}
-
--- Biến lưu UI Best Pet để cập nhật
-local bestPetUI = {
-    frame = nil,
-    petName = nil,
-    petRarity = nil,
-    petImage = nil
 }
 
 -- Hàm quét pet từ game
@@ -130,68 +122,16 @@ local function scanPets()
     return petData
 end
 
--- Hàm làm mới best pet
-local function refreshBestPet()
-    local pets = scanPets()
-    local best = nil
+-- Hàm tạo bảng Best Pet (chủ động tạo mới)
+local function createBestPetSection(contentFrame)
+    if not contentFrame then return nil end
     
-    for _, pet in pairs(pets) do
-        if not best or pet.tier > best.tier then
-            best = pet
-        end
-    end
-    
-    if best and best.tier > 0 then
-        currentBestPet = best
-        -- Cập nhật UI nếu đã tồn tại
-        if bestPetUI.petName then
-            bestPetUI.petName.Text = currentBestPet.name
-        end
-        if bestPetUI.petRarity then
-            bestPetUI.petRarity.Text = "✨ " .. currentBestPet.rarity
-            bestPetUI.petRarity.TextColor3 = RARITY_COLORS[currentBestPet.rarity] or THEME.TextSub
-        end
-        if bestPetUI.petImage and currentBestPet.image and currentBestPet.image ~= "" then
-            bestPetUI.petImage.Image = currentBestPet.image
-        end
-    end
-end
-
--- Hàm thêm Best Pet vào tab Auto Steal
-local function addBestPetToAutoSteal(hub)
-    if not hub then return end
-    
-    -- Tìm tab Auto Steal
-    local autoStealTab = nil
-    for _, child in pairs(hub:GetDescendants()) do
-        if child:IsA("TextButton") and child.Text:find("Auto Steal") then
-            autoStealTab = child
-            break
-        end
-    end
-    
-    if not autoStealTab then return end
-    
-    -- Tìm frame chứa nội dung tab
-    local tabFrame = autoStealTab.Parent
-    if not tabFrame then return end
-    
-    local contentFrame = nil
-    for _, child in pairs(tabFrame:GetDescendants()) do
-        if child:IsA("Frame") and child.Visible == true and child.AbsoluteSize.X > 200 then
-            contentFrame = child
-            break
-        end
-    end
-    
-    if not contentFrame then return end
-    
-    -- Kiểm tra đã có Best Pet chưa
+    -- Kiểm tra đã có chưa
     if contentFrame:FindFirstChild("RonneiBestPetSection") then
-        return
+        return contentFrame:FindFirstChild("RonneiBestPetSection")
     end
     
-    -- Tạo Best Pet Section
+    -- Tạo frame chính
     local bestPetFrame = Instance.new("Frame", contentFrame)
     bestPetFrame.Name = "RonneiBestPetSection"
     bestPetFrame.Size = UDim2.new(1, -20, 0, 80)
@@ -200,10 +140,13 @@ local function addBestPetToAutoSteal(hub)
     bestPetFrame.BackgroundTransparency = 0.3
     bestPetFrame.BorderSizePixel = 0
     bestPetFrame.ClipsDescendants = true
+    bestPetFrame.ZIndex = 10
     
+    -- Corner
     local corner = Instance.new("UICorner", bestPetFrame)
     corner.CornerRadius = UDim.new(0, 8)
     
+    -- Border
     local border = Instance.new("UIStroke", bestPetFrame)
     border.Color = THEME.Stroke
     border.Thickness = 1
@@ -219,6 +162,7 @@ local function addBestPetToAutoSteal(hub)
     title.Font = THEME.FontBold
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.BackgroundTransparency = 1
+    title.ZIndex = 11
     
     -- Divider
     local divider = Instance.new("Frame", bestPetFrame)
@@ -234,6 +178,7 @@ local function addBestPetToAutoSteal(hub)
     avatarFrame.BackgroundColor3 = Color3.fromRGB(38, 42, 56)
     avatarFrame.BorderSizePixel = 0
     avatarFrame.ClipsDescendants = true
+    avatarFrame.ZIndex = 11
     
     local avatarCorner = Instance.new("UICorner", avatarFrame)
     avatarCorner.CornerRadius = UDim.new(0, 6)
@@ -245,8 +190,9 @@ local function addBestPetToAutoSteal(hub)
     petImage.BackgroundTransparency = 1
     petImage.Image = currentBestPet.image
     petImage.ScaleType = Enum.ScaleType.Fit
+    petImage.ZIndex = 12
     
-    -- Pet info
+    -- Pet Name
     local petName = Instance.new("TextLabel", bestPetFrame)
     petName.Name = "PetName"
     petName.Size = UDim2.new(0.5, 0, 0, 22)
@@ -257,7 +203,9 @@ local function addBestPetToAutoSteal(hub)
     petName.Font = THEME.FontBold
     petName.TextXAlignment = Enum.TextXAlignment.Left
     petName.BackgroundTransparency = 1
+    petName.ZIndex = 11
     
+    -- Pet Rarity
     local petRarity = Instance.new("TextLabel", bestPetFrame)
     petRarity.Name = "PetRarity"
     petRarity.Size = UDim2.new(0.5, 0, 0, 20)
@@ -268,15 +216,11 @@ local function addBestPetToAutoSteal(hub)
     petRarity.Font = THEME.Font
     petRarity.TextXAlignment = Enum.TextXAlignment.Left
     petRarity.BackgroundTransparency = 1
-    
-    -- Lưu UI vào biến để cập nhật
-    bestPetUI.frame = bestPetFrame
-    bestPetUI.petName = petName
-    bestPetUI.petRarity = petRarity
-    bestPetUI.petImage = petImage
+    petRarity.ZIndex = 11
     
     -- Refresh button
     local refreshBtn = Instance.new("TextButton", bestPetFrame)
+    refreshBtn.Name = "RefreshBtn"
     refreshBtn.Size = UDim2.new(0, 50, 0, 24)
     refreshBtn.Position = UDim2.new(1, -60, 0, 32)
     refreshBtn.Text = "⟳ Làm mới"
@@ -286,25 +230,68 @@ local function addBestPetToAutoSteal(hub)
     refreshBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
     refreshBtn.BorderSizePixel = 0
     refreshBtn.AutoButtonColor = false
+    refreshBtn.ZIndex = 11
     
     local refreshCorner = Instance.new("UICorner", refreshBtn)
     refreshCorner.CornerRadius = UDim.new(0, 4)
     
+    -- Hàm cập nhật UI
+    local function updateBestPetUI()
+        petName.Text = currentBestPet.name
+        petRarity.Text = "✨ " .. currentBestPet.rarity
+        petRarity.TextColor3 = RARITY_COLORS[currentBestPet.rarity] or THEME.TextSub
+        if currentBestPet.image and currentBestPet.image ~= "" then
+            petImage.Image = currentBestPet.image
+        end
+    end
+    
+    -- Nút làm mới
     refreshBtn.MouseButton1Click:Connect(function()
         refreshBtn.Text = "⟳ Đang tải..."
         refreshBtn.BackgroundColor3 = Color3.fromRGB(200, 150, 50)
         task.delay(0.5, function()
-            refreshBestPet()
             refreshBtn.Text = "⟳ Làm mới"
             refreshBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+            local pets = scanPets()
+            local best = nil
+            for _, pet in pairs(pets) do
+                if not best or pet.tier > best.tier then
+                    best = pet
+                end
+            end
+            if best and best.tier > 0 then
+                currentBestPet = best
+                updateBestPetUI()
+            end
         end)
     end)
     
-    print("[Ronnei] ✅ Đã thêm Best Pet vào tab Auto Steal!")
+    -- Vòng lặp cập nhật tự động
+    task.spawn(function()
+        while true do
+            pcall(function()
+                local pets = scanPets()
+                local best = nil
+                for _, pet in pairs(pets) do
+                    if not best or pet.tier > best.tier then
+                        best = pet
+                    end
+                end
+                if best and best.tier > 0 then
+                    currentBestPet = best
+                    updateBestPetUI()
+                end
+            end)
+            task.wait(1.5)
+        end
+    end)
+    
+    print("[Ronnei] ✅ Đã tạo bảng Best Pet!")
+    return bestPetFrame
 end
 
--- Hàm tìm hub và thêm Best Pet
-local function findAndAddBestPet()
+-- Hàm tìm và chèn Best Pet vào đúng vị trí
+local function findAndInsertBestPet()
     local containers = {CoreGui}
     if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
         table.insert(containers, LocalPlayer.PlayerGui)
@@ -322,24 +309,50 @@ local function findAndAddBestPet()
                     end
                 end
             end)
+            
             if isHub then
-                addBestPetToAutoSteal(child)
-                return true
+                -- Tìm tab Auto Steal
+                local autoStealTab = nil
+                for _, d in pairs(child:GetDescendants()) do
+                    if d:IsA("TextButton") and d.Text:find("Auto Steal") then
+                        autoStealTab = d
+                        break
+                    end
+                end
+                
+                if autoStealTab then
+                    -- Tìm frame chứa nội dung tab
+                    local tabFrame = autoStealTab.Parent
+                    if tabFrame then
+                        -- Tìm content frame
+                        for _, d in pairs(tabFrame:GetDescendants()) do
+                            if d:IsA("Frame") and d.Visible == true and d.AbsoluteSize.X > 200 and d:FindFirstChild("RonneiBestPetSection") == nil then
+                                -- Tạo Best Pet ở đây
+                                createBestPetSection(d)
+                                return true
+                            end
+                        end
+                    end
+                end
             end
         end
     end
     return false
 end
 
--- Chạy tìm hub và thêm Best Pet (chỉ 1 lần)
+-- Hàm kiểm tra và tạo Best Pet liên tục
 task.spawn(function()
     local attempts = 0
-    while attempts < 30 do
-        if findAndAddBestPet() then
+    while attempts < 60 do
+        if findAndInsertBestPet() then
+            print("[Ronnei] ✅ Đã chèn Best Pet vào tab Auto Steal!")
             break
         end
         attempts = attempts + 1
         task.wait(1)
+    end
+    if attempts >= 60 then
+        print("[Ronnei] ⚠️ Không tìm thấy tab Auto Steal để chèn Best Pet")
     end
 end)
 
