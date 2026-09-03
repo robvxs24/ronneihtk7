@@ -1,8 +1,9 @@
 -- ==============================================================================
---  RONNEI HUB - 100% VIETNAMESE + DYNAMIC COUNTER TRANSLATOR + HIGH CONTRAST
+--  RONNEI HUB - 100% VN + MUSIC TAB (12 TRACKS) + HIGH CONTRAST THEME
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
@@ -18,7 +19,37 @@ local NEW_IMAGE = "rbxassetid://125111940452696"
 
 getgenv().RonneiTranslateVN = false
 
--- 2. Bảng màu tương phản cao (High-Contrast Slate Theme)
+-- 2. Khởi tạo Sound Object phát nhạc
+local BG_SOUND = SoundService:FindFirstChild("RonneiMusicPlayer")
+if not BG_SOUND then
+    BG_SOUND = Instance.new("Sound")
+    BG_SOUND.Name = "RonneiMusicPlayer"
+    BG_SOUND.Volume = 0.5
+    BG_SOUND.Looped = true
+    BG_SOUND.Parent = SoundService
+end
+
+-- Danh sách 12 bài hát hoàn chỉnh
+local MUSIC_TRACKS = {
+    { id = "73197748961359",  titleVN = "Nhạc 1",  titleEN = "Track 1" },
+    { id = "71566297131284",  titleVN = "Nhạc 2",  titleEN = "Track 2" },
+    { id = "12139705178741",  titleVN = "Nhạc 3",  titleEN = "Track 3" },
+    { id = "138323881451411", titleVN = "Nhạc 4",  titleEN = "Track 4" },
+    { id = "73200486470465",  titleVN = "Nhạc 5",  titleEN = "Track 5" },
+    { id = "119372546759640", titleVN = "Nhạc 6",  titleEN = "Track 6" },
+    { id = "125463248456145", titleVN = "Nhạc 7",  titleEN = "Track 7" },
+    { id = "80226192070089",  titleVN = "Nhạc 8",  titleEN = "Track 8" },
+    { id = "135574505310",    titleVN = "Nhạc 9",  titleEN = "Track 9" },
+    { id = "2602546138",      titleVN = "Nhạc 10", titleEN = "Track 10" },
+    { id = "75537083584377",  titleVN = "Nhạc 11", titleEN = "Track 11" },
+    { id = "80510130014912",  titleVN = "Nhạc 12", titleEN = "Track 12" }
+}
+
+local currentPlayingId = ""
+local volumeLevels = {0.25, 0.5, 0.75, 1.0, 0}
+local currentVolIdx = 2 -- Mặc định 50%
+
+-- 3. Cấu hình bảng màu giao diện
 local THEME = {
     Background    = Color3.fromRGB(28, 31, 42),
     Secondary     = Color3.fromRGB(38, 42, 56),
@@ -37,7 +68,7 @@ local THEME = {
     FontBold      = Enum.Font.GothamBold
 }
 
--- 3. Kiểm tra các giá trị đo lường thuần túy không được can thiệp
+-- 4. Kiểm tra các giá trị đo lường thuần túy
 local function isPureMetric(txt)
     if not txt or txt == "" then return true end
     local low = txt:lower()
@@ -48,37 +79,28 @@ local function isPureMetric(txt)
     return false
 end
 
--- 4. Bộ chuyển ngữ dòng thống kê / thông báo thời gian thực
+-- 5. Bộ chuyển ngữ dòng thống kê đếm thời gian thực
 local function translateDynamicCounters(txt)
     local res = txt
-    -- Thống kê trộm & ấp
     res = res:gsub("Idle", "Đang chờ"):gsub("idle", "đang chờ")
     res = res:gsub("Banked", "Đã cất"):gsub("banked", "đã cất")
     res = res:gsub("Lost", "Mất"):gsub("lost", "mất")
     res = res:gsub("Re%-grabs", "Nhặt lại"):gsub("re%-grabs", "nhặt lại")
     res = res:gsub("Placed", "Đã đặt"):gsub("placed", "đã đặt")
     res = res:gsub("Hatched", "Đã nở"):gsub("hatched", "đã nở")
-    
-    -- Trạng thái máy chạy bộ
     res = res:gsub("not training", "đang nghỉ"):gsub("earned", "kiếm được"):gsub("this session", "phiên này")
-    
-    -- Tối ưu hóa & Quét server
     res = res:gsub("quietened", "đã giảm tải"):gsub("effects", "hiệu ứng")
     res = res:gsub("(%d+)%s*pages", "%1 trang"):gsub("up to (%d+) servers", "quét tới %1 server")
-    
-    -- Popup thông báo nhặt trứng
     res = res:gsub("banked (.+) Egg", "Đã cất Trứng %1")
     return res
 end
 
--- 5. Từ điển dịch tiếng Việt đầy đủ 100%
+-- 6. Từ điển dịch tiếng Việt chuẩn xác
 local fullTransTable = {
-    -- Sidebar / Tabs
     ["Monster"] = "Quái vật", ["Auto Steal"] = "Tự động trộm", ["Filters"] = "Bộ lọc",
     ["Plot"] = "Khu đất", ["Server"] = "Máy chủ", ["Misc"] = "Tính năng phụ",
-    ["Webhook"] = "Webhook", ["Settings"] = "Cài đặt",
+    ["Webhook"] = "Webhook", ["Settings"] = "Cài đặt", ["Music"] = "Âm nhạc",
     
-    -- Headers & Section Titles
     ["EVENT"] = "SỰ KIỆN", ["STEALING"] = "TRỘM TRỨNG", ["YOUR STUFF"] = "ĐỒ CỦA BẠN",
     ["CONFIG"] = "CẤU HÌNH", ["SELLING"] = "BÁN VẬT PHẨM", ["TREADMILL TRAINING"] = "LUYỆN TẬP MÁY CHẠY",
     ["AUTOMATE IT"] = "TỰ ĐỘNG HÓA", ["TARGETING"] = "MỤC TIÊU", ["SPEED"] = "TỐC ĐỘ",
@@ -92,7 +114,7 @@ local fullTransTable = {
     ["EGGS ON THE MAP"] = "TRỨNG TRÊN BẢN ĐỒ", ["EGGS ON YOUR PLOT"] = "TRỨNG TRÊN ĐẤT CỦA BẠN",
     ["STATS PANEL"] = "BẢNG THỐNG KÊ",
 
-    -- Tab Khu đất (Plot) - Trứng, Ấp & Nâng cấp
+    -- Tab Khu đất
     ["Auto Place Eggs"] = "Tự động đặt trứng",
     ["Never place this rarity or rarer"] = "Không đặt từ độ hiếm này trở lên",
     ["keeps your best eggs in the bag instead of committing them to a hatch timer"] = "giữ trứng xịn nhất trong túi thay vì đưa vào thời gian đếm ấp",
@@ -106,8 +128,6 @@ local fullTransTable = {
     ["keeps your best pets out at all times — hatch something better and it swaps, even when your pen is full"] = "luôn dùng pet mạnh nhất — mở ra con tốt hơn sẽ tự thay thế kể cả khi chuồng đầy",
     ["keeps your best pets out at all times - hatch something better and it swaps, even when your pen is full"] = "luôn dùng pet mạnh nhất — mở ra con tốt hơn sẽ tự thay thế kể cả khi chuồng đầy",
     ["Auto Upgrade Trails"] = "Tự nâng cấp vệt sáng (Trails)",
-
-    -- Tab Khu đất (Plot) - Bán (Selling) & Máy chạy (Treadmill)
     ["What selling will never touch"] = "Những thứ không bao giờ bị bán",
     ["favourited · equipped · in the fuse machine · in the pen · placed on your plot"] = "yêu thích · đang trang bị · trong máy ghép · trong chuồng · đặt trên đất",
     ["Sell anything earning under ($/s)"] = "Bán mọi thứ kiếm dưới ($/s)",
@@ -121,7 +141,7 @@ local fullTransTable = {
     ["Train when Tự động trộm is off"] = "Tập khi tắt Tự động trộm",
     ["on = trains whenever there is nothing worth stealing"] = "bật = tập luyện bất cứ khi nào không có gì đáng trộm",
 
-    -- Tab Máy chủ (Server)
+    -- Tab Máy chủ
     ["Auto Hop"] = "Tự động đổi server", ["Hop now"] = "Đổi server ngay", ["Hop"] = "Đổi ngay",
     ["How hard to look"] = "Độ sâu tìm server", ["Skip full servers"] = "Bỏ qua server đầy",
     ["Reload hub after hopping"] = "Nạp lại hub sau khi đổi",
@@ -134,7 +154,7 @@ local fullTransTable = {
     ["skip servers emptier than this · blank for any"] = "bỏ qua server vắng hơn mức này · để trống để chọn mọi server",
     ["skip servers busier than this · fewer players means less competition for the same eggs · blank for any"] = "bỏ qua server đông hơn mức này · ít người chơi hơn giúp giảm cạnh tranh trứng · để trống để chọn mọi server",
 
-    -- Tab Tính năng phụ (Misc) - ESP, Bay, Hiệu năng
+    -- Tab Tính năng phụ (Misc)
     ["Egg ESP"] = "ESP Trứng",
     ["each egg's $/s, rarity, weight and mutations floating over it · no distance limit"] = "hiển thị $/s, độ hiếm, trọng lượng và đột biến nổi trên quả · không giới hạn cự ly",
     ["Show ESP on"] = "Hiển thị ESP cho",
@@ -197,7 +217,7 @@ local fullTransTable = {
     ["off (recommended) - then a config you share cannot give away your channel"] = "tắt (khuyến nghị) — giúp chia sẻ cấu hình mà không bị lộ webhook",
     ["Any"] = "Bất kỳ",
 
-    -- Tab Auto Steal (Trộm trứng)
+    -- Tab Auto Steal
     ["your Filters tab decides what counts, then takes the most valuable one that does"] = "tab Bộ lọc quyết định điều kiện, sau đó lấy quả giá trị nhất khớp lọc",
     ["IN PLAY: all areas · no other limits"] = "ĐANG CHẠY: tất cả khu vực · không giới hạn khác",
     ["IN PLAY: all areas - no other limits"] = "ĐANG CHẠY: tất cả khu vực · không giới hạn khác",
@@ -219,7 +239,7 @@ local fullTransTable = {
     ["Bypassed Speed"] = "Vượt tốc độ tối đa",
     ["Bypassed speed cap"] = "Vượt tốc độ tối đa cap",
 
-    -- Tab Quái vật (Monster)
+    -- Tab Quái vật
     ["Feed him one"] = "Cho quái ăn 1 quả", ["Feed"] = "Cho ăn",
     ["Claim the chest"] = "Nhận rương quái", ["Claim"] = "Nhận rương",
     ["Belly"] = "Bụng quái vật", ["Refresh"] = "Làm mới",
@@ -235,7 +255,7 @@ local fullTransTable = {
     ["turn this off and ur fuel gets planted or sold behind ur back"] = "tắt đi sẽ khiến trứng bị đặt hoặc bán mất",
     ["feeding destroys the egg, so it always picks ur least valuable one"] = "cho ăn sẽ làm mất trứng, luôn chọn quả rẻ nhất",
 
-    -- Tab Bộ lọc (Filters)
+    -- Tab Bộ lọc
     ["Matching right now"] = "Đang khớp điều kiện",
     ["Use rarity filter"] = "Lọc theo độ hiếm", ["Use mutation filter"] = "Lọc theo đột biến",
     ["Minimum weight (Kg)"] = "Trọng lượng tối thiểu (Kg)", ["Clear all"] = "Bỏ chọn tất cả",
@@ -247,7 +267,7 @@ local fullTransTable = {
     ["Jungle"] = "Rừng rậm", ["Snow"] = "Vùng tuyết", ["Volcano"] = "Núi lửa",
     ["Abyss Ocean"] = "Vực biển sâu", ["Prehistoric"] = "Tiền sử",
 
-    -- Tab Cài đặt (Settings)
+    -- Tab Cài đặt
     ["Import settings"] = "Nhập cài đặt", ["Import"] = "Nhập",
     ["Reset position & size"] = "Đặt lại vị trí & cỡ", ["Reset"] = "Đặt lại",
     ["Export settings"] = "Xuất cài đặt", ["UI scale"] = "Tỷ lệ giao diện",
@@ -255,7 +275,7 @@ local fullTransTable = {
     ["Start minimised"] = "Thu nhỏ khi chạy", ["Search settings..."] = "Tìm kiếm cài đặt...",
     ["Copy"] = "Sao chép",
 
-    -- Độ hiếm (Rarities)
+    -- Độ hiếm
     ["Common"] = "Thường", ["Uncommon"] = "Không phổ biến", ["Rare"] = "Hiếm",
     ["Epic"] = "Sử thi", ["Legendary"] = "Huyền thoại", ["Mythic"] = "Thần thoại",
     ["Cosmic"] = "Vũ trụ", ["Secret"] = "Bí mật", ["Eternal"] = "Vĩnh hằng", ["Divine"] = "Thần thánh"
@@ -273,7 +293,7 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 6. Hook trực tiếp Toggle gốc theo vị trí thực tế
+-- 7. Hook Toggle gốc theo vị trí thực tế
 local function hookToggleElement(track)
     if track:GetAttribute("ToggleHooked") then return end
 
@@ -327,9 +347,9 @@ local function hookToggleElement(track)
     end)
 end
 
--- 7. Nâng cấp đồ họa sáng sủa & tối ưu độ sắc nét font chữ
+-- 8. Nâng cấp đồ họa sáng sủa & font chữ
 local function applyModernVisuals(obj)
-    if obj:GetAttribute("IsLangToggle") then return end
+    if obj:GetAttribute("IsLangToggle") or obj:GetAttribute("IsMusicModule") then return end
 
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
@@ -406,7 +426,298 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 8. Điều phối vòng lặp chính
+-- 9. MODULE TAB ÂM NHẠC (12 BÀI HÁT)
+local function buildMusicTab(mainFrame)
+    if mainFrame:FindFirstChild("RonneiMusicPage") then return end
+
+    local tabSidebarContainer = nil
+    local pagesContainer = nil
+
+    for _, desc in ipairs(mainFrame:GetDescendants()) do
+        if desc:IsA("TextLabel") and (desc.Text == "Settings" or desc.Text == "Cài đặt") then
+            local btn = desc:FindFirstAncestorWhichIsA("GuiButton") or desc.Parent
+            if btn and btn.Parent then
+                tabSidebarContainer = btn.Parent
+            end
+        end
+        if desc:IsA("TextLabel") and (desc.Text:find("AUTO STEAL") or desc.Text:find("TRỘM TRỨNG") or desc.Text:find("Auto Steal")) then
+            local p = desc:FindFirstAncestorWhichIsA("ScrollingFrame") or desc.Parent
+            while p and p.Parent ~= mainFrame and p.Parent ~= nil do
+                if p.Parent:IsA("Frame") or p.Parent:IsA("ScrollingFrame") then
+                    pagesContainer = p.Parent
+                    break
+                end
+                p = p.Parent
+            end
+        end
+    end
+
+    if not tabSidebarContainer then
+        for _, f in ipairs(mainFrame:GetChildren()) do
+            if f:IsA("GuiObject") and f.AbsoluteSize.X >= 70 and f.AbsoluteSize.X <= 180 then
+                tabSidebarContainer = f:FindFirstChildOfClass("ScrollingFrame") or f
+                break
+            end
+        end
+    end
+
+    if not pagesContainer then
+        for _, f in ipairs(mainFrame:GetChildren()) do
+            if f:IsA("GuiObject") and f.AbsoluteSize.X >= 220 and f.AbsoluteSize.Y >= 160 then
+                pagesContainer = f
+                break
+            end
+        end
+    end
+
+    if not tabSidebarContainer or not pagesContainer then return end
+
+    -- 9.1. Tạo Page hiển thị Tab Âm nhạc
+    local musicPage = Instance.new("ScrollingFrame")
+    musicPage.Name = "RonneiMusicPage"
+    musicPage.Size = UDim2.new(1, 0, 1, 0)
+    musicPage.BackgroundTransparency = 1
+    musicPage.BorderSizePixel = 0
+    musicPage.ScrollBarThickness = 4
+    musicPage.Visible = false
+    musicPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    musicPage:SetAttribute("IsMusicModule", true)
+    musicPage.Parent = pagesContainer
+
+    local pageLayout = Instance.new("UIListLayout", musicPage)
+    pageLayout.Padding = UDim.new(0, 8)
+    pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+    local pagePad = Instance.new("UIPadding", musicPage)
+    pagePad.PaddingTop = UDim.new(0, 10)
+    pagePad.PaddingBottom = UDim.new(0, 15)
+    pagePad.PaddingLeft = UDim.new(0, 12)
+    pagePad.PaddingRight = UDim.new(0, 12)
+
+    -- Header trạng thái
+    local statusCard = Instance.new("Frame", musicPage)
+    statusCard.Size = UDim2.new(1, 0, 0, 48)
+    statusCard.BackgroundColor3 = THEME.Secondary
+    Instance.new("UICorner", statusCard).CornerRadius = UDim.new(0, 6)
+    local scStroke = Instance.new("UIStroke", statusCard)
+    scStroke.Color = THEME.Stroke
+    scStroke.Thickness = 1.2
+
+    local statusHeader = Instance.new("TextLabel", statusCard)
+    statusHeader.Size = UDim2.new(1, -20, 0, 18)
+    statusHeader.Position = UDim2.new(0, 12, 0, 6)
+    statusHeader.BackgroundTransparency = 1
+    statusHeader.Font = THEME.FontBold
+    statusHeader.TextSize = 11
+    statusHeader.TextColor3 = THEME.Accent
+    statusHeader.TextXAlignment = Enum.TextXAlignment.Left
+    statusHeader.Text = "TRÌNH PHÁT NHẠC"
+
+    local statusText = Instance.new("TextLabel", statusCard)
+    statusText.Size = UDim2.new(1, -20, 0, 18)
+    statusText.Position = UDim2.new(0, 12, 0, 24)
+    statusText.BackgroundTransparency = 1
+    statusText.Font = THEME.Font
+    statusText.TextSize = 11
+    statusText.TextColor3 = THEME.TextMain
+    statusText.TextXAlignment = Enum.TextXAlignment.Left
+    statusText.Text = "Trạng thái: Đã dừng"
+
+    local trackBtns = {}
+    local trackTitleLabels = {}
+
+    local function updateStatusUI()
+        local isVN = getgenv().RonneiTranslateVN
+        statusHeader.Text = isVN and "TRÌNH PHÁT NHẠC" or "MUSIC PLAYER"
+        
+        if currentPlayingId == "" or not BG_SOUND.IsPlaying then
+            statusText.Text = isVN and "Trạng thái: Đã dừng" or "Status: Stopped"
+        else
+            local foundName = "Track"
+            for _, trk in ipairs(MUSIC_TRACKS) do
+                if trk.id == currentPlayingId then
+                    foundName = isVN and trk.titleVN or trk.titleEN
+                    break
+                end
+            end
+            statusText.Text = (isVN and "Đang phát: " or "Playing: ") .. foundName
+        end
+
+        for id, btn in pairs(trackBtns) do
+            if currentPlayingId == id and BG_SOUND.IsPlaying then
+                btn.Text = isVN and "Dừng" or "Stop"
+                btn.BackgroundColor3 = Color3.fromRGB(220, 50, 70)
+            else
+                btn.Text = isVN and "Phát" or "Play"
+                btn.BackgroundColor3 = THEME.Accent
+            end
+        end
+
+        for id, lbl in pairs(trackTitleLabels) do
+            for _, trk in ipairs(MUSIC_TRACKS) do
+                if trk.id == id then
+                    lbl.Text = (isVN and trk.titleVN or trk.titleEN) .. " (" .. trk.id .. ")"
+                    break
+                end
+            end
+        end
+    end
+
+    -- Tạo các Card bài hát từ danh sách 12 bài
+    for _, trk in ipairs(MUSIC_TRACKS) do
+        local card = Instance.new("Frame", musicPage)
+        card.Size = UDim2.new(1, 0, 0, 44)
+        card.BackgroundColor3 = THEME.Secondary
+        Instance.new("UICorner", card).CornerRadius = UDim.new(0, 6)
+        local cStroke = Instance.new("UIStroke", card)
+        cStroke.Color = THEME.Stroke
+        cStroke.Thickness = 1.2
+
+        local titleLbl = Instance.new("TextLabel", card)
+        titleLbl.Size = UDim2.new(1, -85, 1, 0)
+        titleLbl.Position = UDim2.new(0, 12, 0, 0)
+        titleLbl.BackgroundTransparency = 1
+        titleLbl.Font = THEME.FontBold
+        titleLbl.TextSize = 11
+        titleLbl.TextColor3 = THEME.TextMain
+        titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+        titleLbl.Text = trk.titleVN .. " (" .. trk.id .. ")"
+        trackTitleLabels[trk.id] = titleLbl
+
+        local pBtn = Instance.new("TextButton", card)
+        pBtn.Size = UDim2.new(0, 65, 0, 26)
+        pBtn.Position = UDim2.new(1, -75, 0.5, 0)
+        pBtn.AnchorPoint = Vector2.new(0, 0.5)
+        pBtn.BackgroundColor3 = THEME.Accent
+        pBtn.Font = THEME.FontBold
+        pBtn.TextSize = 11
+        pBtn.TextColor3 = Color3.fromRGB(15, 18, 25)
+        pBtn.Text = "Phát"
+        Instance.new("UICorner", pBtn).CornerRadius = UDim.new(0, 5)
+
+        trackBtns[trk.id] = pBtn
+
+        pBtn.MouseButton1Click:Connect(function()
+            if currentPlayingId == trk.id and BG_SOUND.IsPlaying then
+                BG_SOUND:Stop()
+                currentPlayingId = ""
+            else
+                BG_SOUND:Stop()
+                BG_SOUND.SoundId = "rbxassetid://" .. trk.id
+                BG_SOUND:Play()
+                currentPlayingId = trk.id
+            end
+            updateStatusUI()
+        end)
+    end
+
+    -- Card Điều khiển tổng: Âm lượng & Dừng toàn bộ
+    local ctrlCard = Instance.new("Frame", musicPage)
+    ctrlCard.Size = UDim2.new(1, 0, 0, 46)
+    ctrlCard.BackgroundColor3 = THEME.Secondary
+    Instance.new("UICorner", ctrlCard).CornerRadius = UDim.new(0, 6)
+    local ctStroke = Instance.new("UIStroke", ctrlCard)
+    ctStroke.Color = THEME.Stroke
+    ctStroke.Thickness = 1.2
+
+    local volBtn = Instance.new("TextButton", ctrlCard)
+    volBtn.Size = UDim2.new(0.48, -6, 0, 28)
+    volBtn.Position = UDim2.new(0, 8, 0.5, 0)
+    volBtn.AnchorPoint = Vector2.new(0, 0.5)
+    volBtn.BackgroundColor3 = Color3.fromRGB(48, 54, 72)
+    volBtn.Font = THEME.FontBold
+    volBtn.TextSize = 11
+    volBtn.TextColor3 = THEME.TextMain
+    volBtn.Text = "Âm lượng: 50%"
+    Instance.new("UICorner", volBtn).CornerRadius = UDim.new(0, 5)
+
+    volBtn.MouseButton1Click:Connect(function()
+        currentVolIdx = (currentVolIdx % #volumeLevels) + 1
+        local newVol = volumeLevels[currentVolIdx]
+        BG_SOUND.Volume = newVol
+        local isVN = getgenv().RonneiTranslateVN
+        volBtn.Text = (isVN and "Âm lượng: " or "Volume: ") .. (newVol == 0 and (isVN and "Tắt tiếng" or "Mute") or tostring(math.floor(newVol * 100)) .. "%")
+    end)
+
+    local stopAllBtn = Instance.new("TextButton", ctrlCard)
+    stopAllBtn.Size = UDim2.new(0.48, -6, 0, 28)
+    stopAllBtn.Position = UDim2.new(1, -8, 0.5, 0)
+    stopAllBtn.AnchorPoint = Vector2.new(1, 0.5)
+    stopAllBtn.BackgroundColor3 = Color3.fromRGB(60, 40, 50)
+    stopAllBtn.Font = THEME.FontBold
+    stopAllBtn.TextSize = 11
+    stopAllBtn.TextColor3 = Color3.fromRGB(255, 120, 130)
+    stopAllBtn.Text = "Dừng phát"
+    Instance.new("UICorner", stopAllBtn).CornerRadius = UDim.new(0, 5)
+
+    stopAllBtn.MouseButton1Click:Connect(function()
+        BG_SOUND:Stop()
+        currentPlayingId = ""
+        updateStatusUI()
+    end)
+
+    -- 9.2. Nút Tab trên Sidebar
+    local musicTabBtn = Instance.new("TextButton")
+    musicTabBtn.Name = "RonneiMusicTabBtn"
+    musicTabBtn.Size = UDim2.new(1, -12, 0, 30)
+    musicTabBtn.BackgroundColor3 = THEME.Secondary
+    musicTabBtn.Font = THEME.FontBold
+    musicTabBtn.TextSize = 11
+    musicTabBtn.TextColor3 = THEME.TextMain
+    musicTabBtn.Text = getgenv().RonneiTranslateVN and "🎵 Âm nhạc" or "🎵 Music"
+    musicTabBtn.TextXAlignment = Enum.TextXAlignment.Left
+    musicTabBtn:SetAttribute("IsMusicModule", true)
+    Instance.new("UICorner", musicTabBtn).CornerRadius = UDim.new(0, 6)
+    local tStroke = Instance.new("UIStroke", musicTabBtn)
+    tStroke.Color = THEME.Stroke
+    tStroke.Thickness = 1
+    
+    local pad = Instance.new("UIPadding", musicTabBtn)
+    pad.PaddingLeft = UDim.new(0, 10)
+    musicTabBtn.Parent = tabSidebarContainer
+
+    local function selectMusicTab()
+        for _, page in ipairs(pagesContainer:GetChildren()) do
+            if page:IsA("GuiObject") and page ~= musicPage then
+                page.Visible = false
+            end
+        end
+        musicPage.Visible = true
+        musicTabBtn.BackgroundColor3 = THEME.Accent
+        musicTabBtn.TextColor3 = Color3.fromRGB(15, 18, 25)
+        updateStatusUI()
+    end
+
+    musicTabBtn.MouseButton1Click:Connect(selectMusicTab)
+
+    for _, sibling in ipairs(tabSidebarContainer:GetChildren()) do
+        if sibling:IsA("GuiButton") and sibling ~= musicTabBtn and not sibling:GetAttribute("TabMusicHooked") then
+            sibling:SetAttribute("TabMusicHooked", true)
+            sibling.MouseButton1Click:Connect(function()
+                musicPage.Visible = false
+                musicTabBtn.BackgroundColor3 = THEME.Secondary
+                musicTabBtn.TextColor3 = THEME.TextMain
+            end)
+        end
+    end
+
+    task.spawn(function()
+        local lastVN = getgenv().RonneiTranslateVN
+        while musicPage and musicPage.Parent do
+            if getgenv().RonneiTranslateVN ~= lastVN then
+                lastVN = getgenv().RonneiTranslateVN
+                musicTabBtn.Text = lastVN and "🎵 Âm nhạc" or "🎵 Music"
+                stopAllBtn.Text = lastVN and "Dừng phát" or "Stop All"
+                local newVol = volumeLevels[currentVolIdx]
+                volBtn.Text = (lastVN and "Âm lượng: " or "Volume: ") .. (newVol == 0 and (lastVN and "Tắt tiếng" or "Mute") or tostring(math.floor(newVol * 100)) .. "%")
+                updateStatusUI()
+            end
+            task.wait(0.3)
+        end
+    end)
+end
+
+-- 10. Vòng lặp điều phối chính
 task.spawn(function()
     local searchReplaced = false
 
@@ -434,7 +745,7 @@ task.spawn(function()
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
-                            -- 8.1. Dịch văn bản
+                            -- 10.1. Dịch văn bản
                             if desc:IsA("TextLabel") or desc:IsA("TextButton") then
                                 local txt = desc.Text
 
@@ -449,9 +760,8 @@ task.spawn(function()
                                         desc.Visible = false
                                     end
                                 else
-                                    if not desc:GetAttribute("IsLangToggle") and not isPureMetric(txt) then
+                                    if not desc:GetAttribute("IsLangToggle") and not desc:GetAttribute("IsMusicModule") and not isPureMetric(txt) then
                                         local low = txt:lower()
-                                        -- Xử lý chuỗi động
                                         if low:find("placed") or low:find("hatched") or low:find("banked") or low:find("lost") 
                                            or low:find("re%-grabs") or low:find("idle") or low:find("training") or low:find("quietened") 
                                            or (low:find("pages") and low:find("server")) then
@@ -501,7 +811,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 8.2. Avatar
+                        -- 10.2. Thay đổi Avatar
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
@@ -516,7 +826,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 8.3. Module nút gạt ngôn ngữ
+                        -- 10.3. Nhận diện MainFrame
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
@@ -525,80 +835,84 @@ task.spawn(function()
                             end
                         end
 
-                        if mainFrame and not searchReplaced then
-                            for _, obj in ipairs(mainFrame:GetDescendants()) do
-                                local isSearch = false
-                                if obj:IsA("TextBox") and (obj.PlaceholderText:find("Search settings") or obj.Text:find("Search settings")) then
-                                    isSearch = true
-                                elseif obj:IsA("TextLabel") and obj.Text:find("Search settings") then
-                                    isSearch = true
-                                end
+                        if mainFrame then
+                            pcall(buildMusicTab, mainFrame)
 
-                                if isSearch then
-                                    local searchBarContainer = obj.Parent
-                                    if searchBarContainer and not searchBarContainer:FindFirstChild("RonneiLangModule") then
-                                        obj.Visible = false
-                                        if obj:IsA("TextBox") then obj.TextEditable = false end
-                                        for _, sibling in ipairs(searchBarContainer:GetChildren()) do
-                                            if sibling:IsA("ImageLabel") or sibling:IsA("TextLabel") or sibling:IsA("TextBox") then
-                                                sibling.Visible = false
+                            if not searchReplaced then
+                                for _, obj in ipairs(mainFrame:GetDescendants()) do
+                                    local isSearch = false
+                                    if obj:IsA("TextBox") and (obj.PlaceholderText:find("Search settings") or obj.Text:find("Search settings")) then
+                                        isSearch = true
+                                    elseif obj:IsA("TextLabel") and obj.Text:find("Search settings") then
+                                        isSearch = true
+                                    end
+
+                                    if isSearch then
+                                        local searchBarContainer = obj.Parent
+                                        if searchBarContainer and not searchBarContainer:FindFirstChild("RonneiLangModule") then
+                                            obj.Visible = false
+                                            if obj:IsA("TextBox") then obj.TextEditable = false end
+                                            for _, sibling in ipairs(searchBarContainer:GetChildren()) do
+                                                if sibling:IsA("ImageLabel") or sibling:IsA("TextLabel") or sibling:IsA("TextBox") then
+                                                    sibling.Visible = false
+                                                end
                                             end
+
+                                            local langModule = Instance.new("Frame", searchBarContainer)
+                                            langModule.Name = "RonneiLangModule"
+                                            langModule.Size = UDim2.new(1, 0, 1, 0)
+                                            langModule.BackgroundTransparency = 1
+                                            langModule.ZIndex = 40
+
+                                            local langLabel = Instance.new("TextLabel", langModule)
+                                            langLabel.Name = "LangLabel"
+                                            langLabel.Size = UDim2.new(1, -55, 1, 0)
+                                            langLabel.Position = UDim2.new(0, 12, 0, 0)
+                                            langLabel.Text = "ON = Tiếng Việt | OFF = English"
+                                            langLabel.Font = THEME.FontBold
+                                            langLabel.TextSize = 11
+                                            langLabel.TextColor3 = THEME.TextMain
+                                            langLabel.TextXAlignment = Enum.TextXAlignment.Left
+                                            langLabel.BackgroundTransparency = 1
+                                            langLabel.ZIndex = 41
+                                            langLabel:SetAttribute("IsLangToggle", true)
+
+                                            local sw = Instance.new("TextButton", langModule)
+                                            sw.Size = UDim2.new(0, 42, 0, 22)
+                                            sw.Position = UDim2.new(1, -50, 0.5, 0)
+                                            sw.AnchorPoint = Vector2.new(0, 0.5)
+                                            sw.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.ToggleOn or THEME.ToggleOff
+                                            sw.Text = ""
+                                            sw.AutoButtonColor = false
+                                            sw.ZIndex = 41
+                                            sw:SetAttribute("IsLangToggle", true)
+
+                                            local swStroke = Instance.new("UIStroke", sw)
+                                            swStroke.Color = getgenv().RonneiTranslateVN and THEME.ToggleOnGlow or THEME.Stroke
+                                            swStroke.Thickness = 1.2
+
+                                            Instance.new("UICorner", sw).CornerRadius = UDim.new(1, 0)
+
+                                            local knob = Instance.new("Frame", sw)
+                                            knob.Size = UDim2.new(0, 16, 0, 16)
+                                            knob.Position = getgenv().RonneiTranslateVN and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+                                            knob.AnchorPoint = Vector2.new(0, 0.5)
+                                            knob.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.KnobOn or THEME.KnobOff
+                                            knob.BorderSizePixel = 0
+                                            knob.ZIndex = sw.ZIndex + 1
+                                            Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+                                            sw.MouseButton1Click:Connect(function()
+                                                getgenv().RonneiTranslateVN = not getgenv().RonneiTranslateVN
+                                                local active = getgenv().RonneiTranslateVN
+                                                sw.BackgroundColor3 = active and THEME.ToggleOn or THEME.ToggleOff
+                                                swStroke.Color = active and THEME.ToggleOnGlow or THEME.Stroke
+                                                knob.BackgroundColor3 = active and THEME.KnobOn or THEME.KnobOff
+                                                knob.Position = active and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+                                            end)
+
+                                            searchReplaced = true
                                         end
-
-                                        local langModule = Instance.new("Frame", searchBarContainer)
-                                        langModule.Name = "RonneiLangModule"
-                                        langModule.Size = UDim2.new(1, 0, 1, 0)
-                                        langModule.BackgroundTransparency = 1
-                                        langModule.ZIndex = 40
-
-                                        local langLabel = Instance.new("TextLabel", langModule)
-                                        langLabel.Name = "LangLabel"
-                                        langLabel.Size = UDim2.new(1, -55, 1, 0)
-                                        langLabel.Position = UDim2.new(0, 12, 0, 0)
-                                        langLabel.Text = "ON = Tiếng Việt | OFF = English"
-                                        langLabel.Font = THEME.FontBold
-                                        langLabel.TextSize = 11
-                                        langLabel.TextColor3 = THEME.TextMain
-                                        langLabel.TextXAlignment = Enum.TextXAlignment.Left
-                                        langLabel.BackgroundTransparency = 1
-                                        langLabel.ZIndex = 41
-                                        langLabel:SetAttribute("IsLangToggle", true)
-
-                                        local sw = Instance.new("TextButton", langModule)
-                                        sw.Size = UDim2.new(0, 42, 0, 22)
-                                        sw.Position = UDim2.new(1, -50, 0.5, 0)
-                                        sw.AnchorPoint = Vector2.new(0, 0.5)
-                                        sw.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.ToggleOn or THEME.ToggleOff
-                                        sw.Text = ""
-                                        sw.AutoButtonColor = false
-                                        sw.ZIndex = 41
-                                        sw:SetAttribute("IsLangToggle", true)
-
-                                        local swStroke = Instance.new("UIStroke", sw)
-                                        swStroke.Color = getgenv().RonneiTranslateVN and THEME.ToggleOnGlow or THEME.Stroke
-                                        swStroke.Thickness = 1.2
-
-                                        Instance.new("UICorner", sw).CornerRadius = UDim.new(1, 0)
-
-                                        local knob = Instance.new("Frame", sw)
-                                        knob.Size = UDim2.new(0, 16, 0, 16)
-                                        knob.Position = getgenv().RonneiTranslateVN and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
-                                        knob.AnchorPoint = Vector2.new(0, 0.5)
-                                        knob.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.KnobOn or THEME.KnobOff
-                                        knob.BorderSizePixel = 0
-                                        knob.ZIndex = sw.ZIndex + 1
-                                        Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
-
-                                        sw.MouseButton1Click:Connect(function()
-                                            getgenv().RonneiTranslateVN = not getgenv().RonneiTranslateVN
-                                            local active = getgenv().RonneiTranslateVN
-                                            sw.BackgroundColor3 = active and THEME.ToggleOn or THEME.ToggleOff
-                                            swStroke.Color = active and THEME.ToggleOnGlow or THEME.Stroke
-                                            knob.BackgroundColor3 = active and THEME.KnobOn or THEME.KnobOff
-                                            knob.Position = active and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
-                                        end)
-
-                                        searchReplaced = true
                                     end
                                 end
                             end
