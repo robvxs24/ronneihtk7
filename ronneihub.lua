@@ -29,12 +29,22 @@ local function isInsidePet(o)
     return mountedPetCard and (o == mountedPetCard or o:IsDescendantOf(mountedPetCard))
 end
 
--- 1. BỘ TIÊU DIỆT TẬN GỐC KHUNG ĐEN VIỀN XANH CỦA LENNON HUB
+local function isCoreHubControl(obj)
+    if not obj then return false end
+    local name = obj.Name:lower()
+    if name:find("toggle") or name:find("open") or name:find("close") or name:find("hub") or name:find("menu") then
+        return true
+    end
+    if obj:IsA("GuiButton") and not obj:FindFirstAncestorOfClass("ScrollingFrame") and not obj:FindFirstAncestorOfClass("Frame") then
+        return true
+    end
+    return false
+end
+
 local function hardPurgeGreenBox(obj)
-    if isInsidePet(obj) then return end
+    if isInsidePet(obj) or isCoreHubControl(obj) then return end
     if obj:IsA("GuiObject") then
         local stroke = obj:FindFirstChildOfClass("UIStroke")
-        -- Nhận diện chính xác khung có viền xanh lá đặc trưng của Lennon Hub
         local isGreenBox = stroke and stroke.Color.G > 0.5 and stroke.Color.R < 0.3
         local isLargePanel = obj.AbsoluteSize.X >= 180 and obj.AbsoluteSize.Y >= 120 and obj.BackgroundTransparency < 0.8
         local t = (obj:IsA("TextLabel") or obj:IsA("TextButton")) and obj.Text:upper() or ""
@@ -44,7 +54,7 @@ local function hardPurgeGreenBox(obj)
             obj.Visible = false
             obj.Position = UDim2.new(50, 0, 50, 0)
             pcall(function() obj.Size = UDim2.new(0, 0, 0, 0) end)
-        elseif t:find("LENNON") or t:find("TOP 4") or t:find("RESET GUI") or t:find("TELEPORT") or n:find("logo") then
+        elseif t:find("LENNON") or t:find("TOP 4") or t:find("RESET GUI") or t:find("TELEPORT") or (n:find("logo") and not n:find("ronnei")) then
             obj.Visible = false
             obj.Position = UDim2.new(50, 0, 50, 0)
         end
@@ -64,11 +74,9 @@ hookLennonSuppression(CG)
 if LP and LP:FindFirstChild("PlayerGui") then hookLennonSuppression(LP.PlayerGui) end
 if gethui then hookLennonSuppression(gethui()) end
 
--- 2. KHỞI CHẠY SCRIPT GỐC VÀ LENNON HUB
 task.spawn(function() pcall(function() loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9ee4edde227ac85f50872bf9e4226508.lua"))() end) end)
 task.spawn(function() pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/lennonxscripts/lennonhub/main/stealaegg.lua"))() end) end)
 
--- 3. BỘ DỊCH THUẬT & GIÁ TRỊ ĐỘNG
 local function isPureMetric(t)
     if not t or t == "" then return true end
     local l = t:lower()
@@ -145,7 +153,8 @@ local Dict = {
     ["Share my rare pulls"]="Chia sẻ trứng hiếm nhặt được",["What gets shared"]="Dữ liệu được chia sẻ",
     ["the exact list, so you never have to take our word for it"]="danh sách dữ liệu chính xác, minh bạch",["Show"]="Xem",["Preview"]="Xem trước",
     ["Egg stolen"]="Khi trộm được trứng",["Egg hatched"]="Khi trứng nở",["Mutation rolled"]="Khi ra đột biến",
-    ["Sold pets or eggs"]="Khi bán thú cưng hoặc trứng",["Rewards claimed"]="Khi nhận phần thưởng",["Only eggs earning over ($/s)"]="Chỉ gửi trứng kiếm trên ($/s)",
+    ["Sold pets or eggs"]="Khi bán thú cưng hoặc trứng",["Rewards claimed"]="Khi nhận phần thưởng",
+    ["Only eggs earning over ($/s)"]="Chỉ gửi trứng kiếm trên ($/s)",
     ["stolen + hatched only · blank sends everything · type 250k, 1.5m or 2b"]="chỉ trứng trộm + nở · để trống để gửi tất cả · gõ 250k, 1.5m hoặc 2b",
     ["stolen + hatched only - blank sends everything - type 250k, 1.5m or 2b"]="chỉ trứng trộm + nở · để trống để gửi tất cả · gõ 250k, 1.5m hoặc 2b",
     ["everything · e.g. 50m"]="tất cả · vd: 50m",["Rarity floor"]="Mức độ hiếm sàn",["this rarity and rarer · stolen + hatched only"]="độ hiếm này trở lên · chỉ tính trứng trộm + nở",
@@ -184,18 +193,18 @@ local Dict = {
     ["Reset position & size"]="Đặt lại vị trí & cỡ",["Reset"]="Đặt lại",["Export settings"]="Xuất cài đặt",["UI scale"]="Tỷ lệ giao diện",
     ["Theme"]="Màu giao diện",["Open / close the hub"]="Mở / đóng hub",["Start minimised"]="Thu nhỏ khi chạy",["Search settings..."]="Tìm kiếm cài đặt...",
     ["Copy"]="Sao chép",["Forest"]="Rừng xanh",["Lake"]="Hồ nước",["Desert"]="Sa mạc",["Jungle"]="Rừng rậm",["Snow"]="Vùng tuyết",
-    ["Volcano"]="Núi lửa",["Abyss Ocean"]="Vực biển sâu",["Prehistoric"]="Tiền sử",["Common"]="Thường",["Uncommon"]="Không phổ biến",
-    ["Rare"]="Hiếm",["Epic"]="Sử thi",["Legendary"]="Huyền thoại",["Mythic"]="Thần thoại",["Cosmic"]="Vũ trụ",["Secret"]="Bí mật",
-    ["Eternal"]="Vĩnh hằng",["Divine"]="Thần thánh"
+    ["Volcano"]="Núi lửa",["Abyss Ocean"]="Vực biển sâu",["Prehistoric"]="Tiền sử",
+    ["Common"]="Thường",["Uncommon"]="Không phổ biến",["Rare"]="Hiếm",
+    ["Epic"]="Sử thi",["Legendary"]="Huyền thoại",["Mythic"]="Thần thoại",
+    ["Cosmic"]="Vũ trụ",["Secret"]="Bí mật",["Eternal"]="Vĩnh hằng",["Divine"]="Thần thánh"
 }
 
 local sortedKeys = {}
 for k in pairs(Dict) do table.insert(sortedKeys, k) end
 table.sort(sortedKeys, function(a, b) return #a > #b end)
 
--- 4. HOOK TOGGLE
 local function hookToggle(track)
-    if track:GetAttribute("ToggleHooked") or isInsidePet(track) then return end
+    if track:GetAttribute("ToggleHooked") or isInsidePet(track) or isCoreHubControl(track) then return end
     local knob
     for _, c in ipairs(track:GetChildren()) do
         if c:IsA("GuiObject") and not c:IsA("UIStroke") and not c:IsA("UICorner") and c.Name ~= "ToggleStroke" and math.abs(c.AbsoluteSize.X - c.AbsoluteSize.Y) <= 12 then
@@ -221,7 +230,6 @@ local function hookToggle(track)
     knob:GetPropertyChangedSignal("Position"):Connect(updateVisual)
 end
 
--- 5. VIEWPORT & CAMERA PET
 local function setupPetViewport(vf)
     vf.BackgroundTransparency = 1
     vf.Ambient = Color3.fromRGB(220, 220, 220)
@@ -246,7 +254,6 @@ local function setupPetViewport(vf)
     vf.ChildAdded:Connect(function() task.defer(alignCamera) end)
 end
 
--- 6. TÌM THẺ BEST PET CHUẨN XÁC & TIÊU DIỆT KHUNG XANH
 local function findOriginalBestPetCard()
     if mountedPetCard and mountedPetCard.Parent then return mountedPetCard end
     local list = {CG}
@@ -271,18 +278,6 @@ local function findOriginalBestPetCard()
                                     sub:SetAttribute("IsBestPetCard", true)
                                     if sub:IsA("ViewportFrame") then setupPetViewport(sub) end
                                 end
-                                
-                                -- Xóa sổ vĩnh viễn khung chứa cha (khung xanh lá)
-                                local parentBox = c.Parent
-                                while parentBox and parentBox ~= gui and not parentBox:IsA("ScreenGui") do
-                                    if parentBox.AbsoluteSize.X >= 150 and parentBox.BackgroundTransparency < 0.8 then
-                                        parentBox.Visible = false
-                                        parentBox.Position = UDim2.new(50, 0, 50, 0)
-                                        break
-                                    end
-                                    parentBox = parentBox.Parent
-                                end
-
                                 return c
                             end
                             c = c.Parent
@@ -295,9 +290,8 @@ local function findOriginalBestPetCard()
     return nil
 end
 
--- 7. LÀM ĐẸP GIAO DIỆN (BẢO VỆ TUYỆT ĐỐI AVATAR RONNEI HUB & THẺ PET)
 local function applyVisuals(o)
-    if o:GetAttribute("IsLangToggle") or isInsidePet(o) then return end
+    if o:GetAttribute("IsLangToggle") or isInsidePet(o) or isCoreHubControl(o) then return end
     if (o:IsA("Frame") or o:IsA("GuiButton")) and not o:GetAttribute("ToggleHooked") then
         local sz = o.AbsoluteSize
         if sz.X >= 26 and sz.X <= 65 and sz.Y >= 14 and sz.Y <= 32 and sz.X > (sz.Y * 1.2) then hookToggle(o); return end
@@ -324,7 +318,6 @@ local function applyVisuals(o)
     end
 end
 
--- 8. VÒNG LẶP ĐIỀU PHỐI CHÍNH
 task.spawn(function()
     local searchDone = false
     local petCardMounted = false
@@ -358,7 +351,6 @@ task.spawn(function()
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyVisuals, desc)
 
-                            -- Ghim thẻ Best Pet vào đúng Tab Trộm Trứng
                             if desc:IsA("TextLabel") and (desc.Text == "Tự động trộm" or desc.Text == "Auto Steal") and desc.AbsolutePosition.X > 160 and not isInsidePet(desc) then
                                 local row = desc
                                 while row.Parent and not row.Parent:IsA("ScreenGui") do
@@ -399,14 +391,13 @@ task.spawn(function()
                                 end
                             end
 
-                            -- Cập nhật Live & Dịch thuật
                             if isInsidePet(desc) then
                                 if desc:IsA("TextLabel") and getgenv().RonneiTranslateVN then
                                     local cur = desc.Text
                                     if Dict[cur] then desc.Text = Dict[cur] end
                                 end
                             else
-                                if desc:IsA("TextLabel") or desc:IsA("TextButton") then
+                                if not isCoreHubControl(desc) and (desc:IsA("TextLabel") or desc:IsA("TextButton")) then
                                     local txt = desc.Text
                                     if txt == "BK's Hub" or txt == "BKs Hub" then desc.Text = NEW_NAME
                                     elseif txt:lower():find("discord") or txt:lower():find("bkshub") then desc.Text = ""; desc.Visible = false
@@ -444,9 +435,8 @@ task.spawn(function()
                             end
                         end
 
-                        -- BẢO VỆ TUYỆT ĐỐI AVATAR RONNEI HUB (Chỉ thay đổi ở Header góc trên bên trái)
                         for _, img in ipairs(child:GetDescendants()) do
-                            if (img:IsA("ImageLabel") or img:IsA("ImageButton")) and not isInsidePet(img) then
+                            if (img:IsA("ImageLabel") or img:IsA("ImageButton")) and not isInsidePet(img) and not isCoreHubControl(img) then
                                 local sz = img.AbsoluteSize
                                 if sz.X >= 20 and sz.X <= 65 and math.abs(sz.X - sz.Y) <= 8 then
                                     local n = img.Name:lower()
@@ -460,7 +450,6 @@ task.spawn(function()
                             end
                         end
 
-                        -- Nút gạt ngôn ngữ
                         local mainF
                         for _, f in ipairs(child:GetDescendants()) do if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then mainF = f; break end end
                         if mainF and not searchDone then
