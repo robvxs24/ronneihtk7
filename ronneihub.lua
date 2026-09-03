@@ -1,6 +1,6 @@
 -- ==============================================================================
 --  RONNEI HUB - 100% VIETNAMESE + DYNAMIC COUNTER TRANSLATOR + HIGH CONTRAST
---  + BEST PET TRACKER (GHÉP VÀO TAB AUTO STEAL)
+--  + BEST PET TRACKER (TÍCH HỢP VÀO VÒNG LẶP CHÍNH)
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -38,7 +38,8 @@ local THEME = {
     FontBold      = Enum.Font.GothamBold
 }
 
--- ================== THÊM BEST PET TRACKER ==================
+-- ================== BEST PET TRACKER - TÍCH HỢP ==================
+
 -- Bảng màu theo độ hiếm
 local RARITY_COLORS = {
     ["Common"] = Color3.fromRGB(150, 150, 150),
@@ -72,6 +73,14 @@ local currentBestPet = {
     rarity = "Unknown",
     image = "rbxassetid://125111940452696",
     tier = 0
+}
+
+-- Biến lưu UI Best Pet để cập nhật
+local bestPetUI = {
+    frame = nil,
+    petName = nil,
+    petRarity = nil,
+    petImage = nil
 }
 
 -- Hàm quét pet từ game
@@ -134,6 +143,17 @@ local function refreshBestPet()
     
     if best and best.tier > 0 then
         currentBestPet = best
+        -- Cập nhật UI nếu đã tồn tại
+        if bestPetUI.petName then
+            bestPetUI.petName.Text = currentBestPet.name
+        end
+        if bestPetUI.petRarity then
+            bestPetUI.petRarity.Text = "✨ " .. currentBestPet.rarity
+            bestPetUI.petRarity.TextColor3 = RARITY_COLORS[currentBestPet.rarity] or THEME.TextSub
+        end
+        if bestPetUI.petImage and currentBestPet.image and currentBestPet.image ~= "" then
+            bestPetUI.petImage.Image = currentBestPet.image
+        end
     end
 end
 
@@ -249,6 +269,12 @@ local function addBestPetToAutoSteal(hub)
     petRarity.TextXAlignment = Enum.TextXAlignment.Left
     petRarity.BackgroundTransparency = 1
     
+    -- Lưu UI vào biến để cập nhật
+    bestPetUI.frame = bestPetFrame
+    bestPetUI.petName = petName
+    bestPetUI.petRarity = petRarity
+    bestPetUI.petImage = petImage
+    
     -- Refresh button
     local refreshBtn = Instance.new("TextButton", bestPetFrame)
     refreshBtn.Size = UDim2.new(0, 50, 0, 24)
@@ -264,43 +290,20 @@ local function addBestPetToAutoSteal(hub)
     local refreshCorner = Instance.new("UICorner", refreshBtn)
     refreshCorner.CornerRadius = UDim.new(0, 4)
     
-    -- Hàm cập nhật UI Best Pet
-    local function updateBestPetUI()
-        petName.Text = currentBestPet.name
-        petRarity.Text = "✨ " .. currentBestPet.rarity
-        petRarity.TextColor3 = RARITY_COLORS[currentBestPet.rarity] or THEME.TextSub
-        if currentBestPet.image and currentBestPet.image ~= "" then
-            petImage.Image = currentBestPet.image
-        end
-    end
-    
-    -- Nút làm mới
     refreshBtn.MouseButton1Click:Connect(function()
         refreshBtn.Text = "⟳ Đang tải..."
         refreshBtn.BackgroundColor3 = Color3.fromRGB(200, 150, 50)
         task.delay(0.5, function()
             refreshBestPet()
-            updateBestPetUI()
             refreshBtn.Text = "⟳ Làm mới"
             refreshBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
         end)
     end)
     
-    -- Vòng lặp cập nhật tự động
-    task.spawn(function()
-        while true do
-            pcall(function()
-                refreshBestPet()
-                updateBestPetUI()
-            end)
-            task.wait(1.5)
-        end
-    end)
-    
     print("[Ronnei] ✅ Đã thêm Best Pet vào tab Auto Steal!")
 end
 
--- Hàm tìm và thêm Best Pet vào hub
+-- Hàm tìm hub và thêm Best Pet
 local function findAndAddBestPet()
     local containers = {CoreGui}
     if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
@@ -328,7 +331,7 @@ local function findAndAddBestPet()
     return false
 end
 
--- Chạy tìm hub và thêm Best Pet sau khi hub load
+-- Chạy tìm hub và thêm Best Pet (chỉ 1 lần)
 task.spawn(function()
     local attempts = 0
     while attempts < 30 do
@@ -340,7 +343,7 @@ task.spawn(function()
     end
 end)
 
--- ================== KẾT THÚC THÊM BEST PET ==================
+-- ================== KẾT THÚC BEST PET ==================
 
 -- 3. Kiểm tra các giá trị đo lường thuần túy không được can thiệp
 local function isPureMetric(txt)
