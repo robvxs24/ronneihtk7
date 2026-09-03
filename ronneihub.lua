@@ -1,5 +1,5 @@
 -- ==============================================================================
---    RONNEI HUB - FIXED REVERT BUG + FULL VN + 2X AVATAR FIX + MODERN UI UPGRADE
+--  RONNEI HUB - FIXED REVERT BUG + FULL VN + 2X AVATAR FIX + MODERN UI UPGRADE
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -18,13 +18,14 @@ local NEW_IMAGE = "rbxassetid://125111940452696"
 
 getgenv().RonneiTranslateVN = false
 
--- 2. Cấu hình bảng màu & Giao diện nâng cấp (Dark Sleek Theme)
+-- 2. Cấu hình bảng màu & Giao diện nâng cấp (High-Contrast Clean Sleek Theme)
 local THEME = {
-    Background = Color3.fromRGB(18, 20, 26),
-    Secondary  = Color3.fromRGB(25, 28, 36),
-    Accent     = Color3.fromRGB(0, 190, 120),
-    TextMain   = Color3.fromRGB(245, 247, 250),
-    Stroke     = Color3.fromRGB(50, 54, 66),
+    Background = Color3.fromRGB(24, 26, 33),   -- Sáng sủa hơn, dịu mắt
+    Secondary  = Color3.fromRGB(32, 35, 45),   -- Khối container nổi bật rõ ràng
+    Accent     = Color3.fromRGB(0, 210, 130),  -- Xanh lá sáng sinh động
+    TextMain   = Color3.fromRGB(255, 255, 255),-- Trắng tinh tuyệt đối dễ đọc
+    TextSub    = Color3.fromRGB(180, 185, 200),-- Xám sáng thay vì xám tối mờ
+    Stroke     = Color3.fromRGB(65, 70, 90),   -- Viền sắc nét tách biệt các block
     Font       = Enum.Font.GothamMedium,
     FontBold   = Enum.Font.GothamBold
 }
@@ -148,7 +149,7 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 5. Hàm tiêm hiệu ứng đồ họa hiện đại (In-Place Restyling)
+-- 5. Hàm tiêm hiệu ứng đồ họa hiện đại (Bright & High-Contrast Restyling)
 local function applyModernVisuals(obj)
     if obj:GetAttribute("RestyledModern") then return end
     obj:SetAttribute("RestyledModern", true)
@@ -164,8 +165,8 @@ local function applyModernVisuals(obj)
             if not obj:FindFirstChildOfClass("UIStroke") and obj.AbsoluteSize.X > 20 then
                 local stroke = Instance.new("UIStroke")
                 stroke.Color = THEME.Stroke
-                stroke.Thickness = 1
-                stroke.Transparency = 0.6
+                stroke.Thickness = 1.2
+                stroke.Transparency = 0.3 -- Rõ nét hơn, không bị mờ
                 stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 stroke.Parent = obj
             end
@@ -180,8 +181,11 @@ local function applyModernVisuals(obj)
     elseif obj:IsA("TextLabel") then
         if not obj:GetAttribute("IsLangToggle") then
             obj.Font = (obj.TextSize >= 14) and THEME.FontBold or THEME.Font
-            if obj.TextColor3.R < 0.3 and obj.TextColor3.G < 0.3 and obj.TextColor3.B < 0.3 then
+            -- Nâng cấp độ tương phản cho chữ: nếu màu chữ quá tối sẽ tự đổi thành trắng/xám sáng
+            if obj.TextColor3.R < 0.4 and obj.TextColor3.G < 0.4 and obj.TextColor3.B < 0.4 then
                 obj.TextColor3 = THEME.TextMain
+            else
+                obj.TextColor3 = THEME.TextSub
             end
         end
 
@@ -189,6 +193,9 @@ local function applyModernVisuals(obj)
         if not obj:GetAttribute("IsLangToggle") then
             if obj:IsA("TextButton") then
                 obj.Font = THEME.FontBold
+                if obj.TextColor3.R < 0.4 then
+                    obj.TextColor3 = THEME.TextMain
+                end
             end
 
             if not obj:FindFirstChildOfClass("UICorner") and obj.AbsoluteSize.X > 15 then
@@ -217,7 +224,7 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 6. Bộ điều phối chính kết hợp Dịch thuật + Skinning + Nút gạt
+-- 6. Bộ điều phối chính kết hợp Dịch thuật + Skinning + Nút gạt trạng thái cực rõ
 task.spawn(function()
     local searchReplaced = false
 
@@ -318,7 +325,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 6.3. Tích hợp nút gạt ngôn ngữ
+                        -- 6.3. Tích hợp nút gạt ngôn ngữ với độ tương phản cực rõ (ON = Xanh sáng lá, OFF = Xám đậm rõ ràng)
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
@@ -360,26 +367,31 @@ task.spawn(function()
                                         langLabel.Text = "ON = Tiếng Việt | OFF = English"
                                         langLabel.Font = Enum.Font.GothamBold
                                         langLabel.TextSize = 10
-                                        langLabel.TextColor3 = Color3.fromRGB(240, 245, 255)
+                                        langLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
                                         langLabel.TextXAlignment = Enum.TextXAlignment.Left
                                         langLabel.BackgroundTransparency = 1
                                         langLabel.ZIndex = 41
                                         langLabel:SetAttribute("IsLangToggle", true)
 
                                         local sw = Instance.new("TextButton", langModule)
-                                        sw.Size = UDim2.new(0, 36, 0, 18)
-                                        sw.Position = UDim2.new(1, -44, 0.5, 0)
+                                        sw.Size = UDim2.new(0, 40, 0, 20)
+                                        sw.Position = UDim2.new(1, -48, 0.5, 0)
                                         sw.AnchorPoint = Vector2.new(0, 0.5)
-                                        sw.BackgroundColor3 = getgenv().RonneiTranslateVN and Color3.fromRGB(0, 190, 120) or Color3.fromRGB(50, 55, 70)
+                                        sw.BackgroundColor3 = getgenv().RonneiTranslateVN and Color3.fromRGB(0, 210, 130) or Color3.fromRGB(80, 85, 105)
                                         sw.Text = ""
                                         sw.AutoButtonColor = false
                                         sw.ZIndex = 41
                                         sw:SetAttribute("IsLangToggle", true)
+                                        
+                                        local swStroke = Instance.new("UIStroke", sw)
+                                        swStroke.Color = Color3.fromRGB(120, 130, 160)
+                                        swStroke.Thickness = 1
+                                        
                                         Instance.new("UICorner", sw).CornerRadius = UDim.new(1, 0)
 
                                         local knob = Instance.new("Frame", sw)
-                                        knob.Size = UDim2.new(0, 14, 0, 14)
-                                        knob.Position = getgenv().RonneiTranslateVN and UDim2.new(1, -16, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
+                                        knob.Size = UDim2.new(0, 16, 0, 16)
+                                        knob.Position = getgenv().RonneiTranslateVN and UDim2.new(1, -18, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
                                         knob.AnchorPoint = Vector2.new(0, 0.5)
                                         knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                                         knob.BorderSizePixel = 0
@@ -389,8 +401,8 @@ task.spawn(function()
                                         sw.MouseButton1Click:Connect(function()
                                             getgenv().RonneiTranslateVN = not getgenv().RonneiTranslateVN
                                             local active = getgenv().RonneiTranslateVN
-                                            sw.BackgroundColor3 = active and Color3.fromRGB(0, 190, 120) or Color3.fromRGB(50, 55, 70)
-                                            knob.Position = active and UDim2.new(1, -16, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
+                                            sw.BackgroundColor3 = active and Color3.fromRGB(0, 210, 130) or Color3.fromRGB(80, 85, 105)
+                                            knob.Position = active and UDim2.new(1, -18, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
                                         end)
 
                                         searchReplaced = true
