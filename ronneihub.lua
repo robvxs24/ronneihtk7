@@ -1,5 +1,5 @@
 -- ==============================================================================
---  RONNEI HUB - HIGH CONTRAST + AUTO TOGGLE HOOK + BRIGHT THEME + FULL VN V2
+--  RONNEI HUB - 100% FULL TRANSLATION + LIVE COUNTER TRANSLATOR + HIGH CONTRAST
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -18,12 +18,12 @@ local NEW_IMAGE = "rbxassetid://125111940452696"
 
 getgenv().RonneiTranslateVN = false
 
--- 2. Cấu hình bảng màu sáng sủa, độ tương phản cao (High-Contrast Slate Theme)
+-- 2. Cấu hình bảng màu giao diện sáng sủa & tương phản cao
 local THEME = {
-    Background    = Color3.fromRGB(28, 31, 42),       -- Nền chính sáng hơn, có chiều sâu
+    Background    = Color3.fromRGB(28, 31, 42),       -- Nền chính sáng hơn, sâu mắt
     Secondary     = Color3.fromRGB(38, 42, 56),       -- Khối container/item nổi bật rõ ràng
     Accent        = Color3.fromRGB(0, 230, 120),      -- Xanh neon chủ đạo
-    Stroke        = Color3.fromRGB(75, 83, 110),      -- Viền khung sắc nét, rõ biên giới
+    Stroke        = Color3.fromRGB(75, 83, 110),      -- Viền khung sắc nét
     
     -- Trạng thái Toggle dứt khoát
     ToggleOn      = Color3.fromRGB(0, 230, 118),      -- BẬT: Xanh Emerald sáng rực rỡ
@@ -39,24 +39,30 @@ local THEME = {
     FontBold      = Enum.Font.GothamBold
 }
 
--- 3. Kiểm tra giá trị động (tránh dịch đè làm đóng băng số liệu / bộ đếm thời gian)
-local function isDynamicValue(txt)
+-- 3. Kiểm tra các giá trị đo lường thuần túy (tránh can thiệp làm đơ FPS, Ping)
+local function isPureMetric(txt)
     if not txt or txt == "" then return true end
     local low = txt:lower()
-    
-    -- Tránh ghi đè FPS, Ping và các bộ đếm thống kê nhặt trứng trong game
     if low:find("fps") or low:find("ms") or low:find("ping") then return true end
-    if low:find("banked") or low:find("hatched") or low:find("placed") or low:find("re%-grabs") then return true end
-    if low:find("idle") and (low:find("%d") or low:find("·")) then return true end
-    
     if txt:match("^%s*[%$]?%d+[%d%.]*%s*[a-zA-Z%%/%$]*%s*$") then return true end
     if txt:match("%d+%s*studs/s") or txt:match("%d+%%") or txt:match("%d+%s*pages") then return true end
     if txt:match("%d+m%s*%d+s") or txt:match("%d+:%d+") then return true end
-    
     return false
 end
 
--- 4. Từ điển dịch tiếng Việt đầy đủ toàn bộ tính năng
+-- 4. Bộ chuyển ngữ dòng thống kê đếm thời gian thực (Live Counters)
+local function translateDynamicCounters(txt)
+    local res = txt
+    res = res:gsub("Idle", "Đang chờ"):gsub("idle", "đang chờ")
+    res = res:gsub("Banked", "Đã cất"):gsub("banked", "đã cất")
+    res = res:gsub("Lost", "Mất"):gsub("lost", "mất")
+    res = res:gsub("Re%-grabs", "Nhặt lại"):gsub("re%-grabs", "nhặt lại")
+    res = res:gsub("Placed", "Đã đặt"):gsub("placed", "đã đặt")
+    res = res:gsub("Hatched", "Đã nở"):gsub("hatched", "đã nở")
+    return res
+end
+
+-- 5. Từ điển dịch tiếng Việt chuẩn xác toàn bộ hệ thống
 local fullTransTable = {
     -- Sidebar / Tabs
     ["Monster"] = "Quái vật", ["Auto Steal"] = "Tự động trộm", ["Filters"] = "Bộ lọc",
@@ -74,6 +80,7 @@ local fullTransTable = {
     ["FLIGHT"] = "BAY LƯỢN", ["PERFORMANCE"] = "HIỆU NĂNG", ["CONNECTION"] = "KẾT NỐI",
     ["GLOBAL FEED"] = "BẢNG TIN TOÀN CẦU", ["WHAT TO SEND"] = "LOẠI DỮ LIỆU GỬI",
     ["HOW MUCH NOISE"] = "MỨC ĐỘ THÔNG BÁO", ["THE MESSAGE"] = "NỘI DUNG TIN NHẮN", ["WINDOW"] = "CỬA SỔ",
+    ["MOVEMENT"] = "DI CHUYỂN", ["VISUALS"] = "HIỂN THỊ",
 
     -- Tab Khu đất (Plot) - Trứng & Thú cưng (Eggs & Pets)
     ["Auto Place Eggs"] = "Tự động đặt trứng",
@@ -88,14 +95,29 @@ local fullTransTable = {
     ["Auto Equip Best Pets"] = "Tự trang bị pet xịn nhất",
     ["keeps your best pets out at all times — hatch something better and it swaps, even when your pen is full"] = "luôn dùng pet mạnh nhất — mở ra con tốt hơn sẽ tự thay thế kể cả khi chuồng đầy",
     ["keeps your best pets out at all times - hatch something better and it swaps, even when your pen is full"] = "luôn dùng pet mạnh nhất — mở ra con tốt hơn sẽ tự thay thế kể cả khi chuồng đầy",
+    ["Auto Fuse Pets"] = "Tự động ghép Pet",
+    ["Auto Fuse"] = "Tự ghép pet",
 
-    -- Tab Khu đất (Plot) - Nâng cấp (Upgrades) & Luyện tập
+    -- Tab Khu đất (Plot) - Nâng cấp, Máy chạy & Bán vật phẩm
     ["Auto Upgrade Trails"] = "Tự nâng cấp vệt sáng (Trails)",
     ["Auto Upgrade Speed"] = "Tự nâng cấp tốc độ",
     ["Auto Upgrade Carry"] = "Tự nâng cấp sức vác",
     ["Auto Upgrade Capacity"] = "Tự nâng cấp sức chứa",
-    ["Auto Treadmill"] = "Tự chạy máy chạy bộ",
+    ["Auto Upgrade Plot"] = "Tự nâng cấp khu đất",
+    ["Auto Upgrade Base"] = "Tự nâng cấp căn cứ",
+    ["Auto Upgrade Treadmill"] = "Tự nâng cấp máy chạy",
+    ["Auto Treadmill"] = "Tự tập máy chạy",
     ["Auto Train"] = "Tự động luyện tập",
+    ["Train on best treadmill"] = "Tập ở máy chạy tốt nhất",
+    ["Select Treadmill"] = "Chọn máy chạy",
+    ["Auto Sell Pets"] = "Tự động bán pet",
+    ["Auto Sell Eggs"] = "Tự động bán trứng",
+    ["Never sell this rarity or rarer"] = "Không bán từ độ hiếm này trở lên",
+    ["Keep favorited"] = "Giữ lại pet yêu thích",
+    ["Keep mutated"] = "Giữ lại pet đột biến",
+    ["Sell all"] = "Bán tất cả",
+    ["Sell now"] = "Bán ngay lập tức",
+    ["Sell delay"] = "Độ trễ khi bán",
 
     -- Tab Auto Steal (Trộm trứng)
     ["your Filters tab decides what counts, then takes the most valuable one that does"] = "tab Bộ lọc quyết định điều kiện, sau đó lấy quả giá trị nhất khớp lọc",
@@ -118,6 +140,9 @@ local fullTransTable = {
     ["Gen ($/s) snipe floor"] = "Mức Gen ($/s) tối thiểu",
     ["Bypassed Speed"] = "Vượt tốc độ tối đa",
     ["Bypassed speed cap"] = "Vượt tốc độ tối đa cap",
+    ["Return Speed"] = "Tốc độ quay về",
+    ["Instant Return"] = "Quay về tức thì",
+    ["Anti Guard"] = "Né bảo vệ",
 
     -- Tab Quái vật (Monster)
     ["Feed him one"] = "Cho quái ăn 1 quả", ["Feed"] = "Cho ăn",
@@ -126,6 +151,7 @@ local fullTransTable = {
     ["Auto Hunt Infested Eggs"] = "Tự săn trứng nhiễm", ["Auto Feed"] = "Tự cho ăn",
     ["Auto Claim Chest"] = "Tự nhận rương", ["Keep infested eggs for him"] = "Giữ trứng cho quái",
     ["Never feed this rarity or rarer"] = "Không cho ăn độ hiếm này trở lên", ["Feed anything"] = "Cho ăn tất cả",
+    ["Feed all"] = "Cho ăn hết",
     ["takes the Monster Chest the moment he hits 100%"] = "nhận Rương Quái ngay khi đạt 100%",
     ["waits till theres nothing left worth stealing, then walks over and feeds"] = "đợi hết trứng ngon rồi tự đi cho ăn",
     ["Auto Steal picks up infested eggs as well as ur normal targets"] = "Tự động nhặt cả trứng nhiễm bệnh và mục tiêu thường",
@@ -135,40 +161,65 @@ local fullTransTable = {
     ["turn this off and ur fuel gets planted or sold behind ur back"] = "tắt đi sẽ khiến trứng bị đặt hoặc bán mất",
     ["feeding destroys the egg, so it always picks ur least valuable one"] = "cho ăn sẽ làm mất trứng, luôn chọn quả rẻ nhất",
 
-    -- Tab Bộ lọc (Filters)
+    -- Tab Bộ lọc (Filters) - Map & Đột biến
     ["Matching right now"] = "Đang khớp điều kiện",
     ["Use rarity filter"] = "Lọc theo độ hiếm", ["Use mutation filter"] = "Lọc theo đột biến",
     ["Minimum weight (Kg)"] = "Trọng lượng tối thiểu (Kg)", ["Clear all"] = "Bỏ chọn tất cả",
+    ["Select all"] = "Chọn tất cả",
     ["easiest first - you can reach all of them, so this is purely what you want - applies in every mode"] = "ưu tiên nơi dễ nhất - bạn có thể đến mọi nơi, tùy bạn chọn - áp dụng mọi chế độ",
+    ["easiest first — you can reach all of them, so this is purely what you want — applies in every mode"] = "ưu tiên nơi dễ nhất - bạn có thể đến mọi nơi, tùy bạn chọn - áp dụng mọi chế độ",
     ["an egg counts if it is one of these"] = "trứng hợp lệ nếu thuộc một trong các loại này",
     ["an egg counts if it carries one of these"] = "trứng hợp lệ nếu mang một trong các đột biến này",
     ["Forest"] = "Rừng xanh", ["Lake"] = "Hồ nước", ["Desert"] = "Sa mạc",
     ["Jungle"] = "Rừng rậm", ["Snow"] = "Vùng tuyết", ["Volcano"] = "Núi lửa",
     ["Abyss Ocean"] = "Vực biển sâu", ["Prehistoric"] = "Tiền sử",
+    ["Meadow"] = "Đồng cỏ", ["Winter"] = "Mùa đông", ["Coral Reef"] = "Rạn san hô",
+    ["Mines"] = "Hầm mỏ", ["Underworld"] = "Địa ngục", ["Atlantis"] = "Atlantis", ["Space"] = "Vũ trụ",
+
+    -- Đột biến (Mutations)
+    ["Normal"] = "Bình thường", ["Golden"] = "Vàng", ["Rainbow"] = "Cầu vồng",
+    ["Silver"] = "Bạc", ["Diamond"] = "Kim cương", ["Shiny"] = "Lấp lánh",
+    ["Infested"] = "Nhiễm bệnh", ["Corrupted"] = "Hư hỏng", ["Ghost"] = "Bóng ma",
+    ["Radioactive"] = "Phóng xạ", ["Oversized"] = "Khổng lồ", ["Tiny"] = "Tí hon",
 
     -- Tab Máy chủ (Server)
     ["Auto Hop"] = "Tự động đổi server", ["Hop now"] = "Đổi server ngay", ["Hop"] = "Đổi ngay",
     ["How hard to look"] = "Độ sâu tìm server", ["Skip full servers"] = "Bỏ qua server đầy",
     ["Reload hub after hopping"] = "Nạp lại hub sau khi đổi", ["Fewest players"] = "Ít người nhất",
-    ["Most players"] = "Đông người nhất",
+    ["Most players"] = "Đông người nhất", ["Rejoin"] = "Vào lại server",
     ["Hop after a while anyway"] = "Đổi server sau một khoảng thời gian",
     ["leave for another server straight away"] = "chuyển sang server khác ngay lập tức",
     ["a full server will just bounce you straight back out"] = "server đầy sẽ khiến bạn bị văng ra ngoài",
 
-    -- Tab Cài đặt & Tiện ích (Settings & Misc)
+    -- Tab Tính năng phụ (Misc)
+    ["Flight"] = "Bay lượn", ["Toggle flight"] = "Bật / tắt bay", ["Fly Speed"] = "Tốc độ bay",
+    ["WalkSpeed"] = "Tốc độ chạy", ["JumpPower"] = "Lực nhảy", ["Infinite Jump"] = "Nhảy vô hạn",
+    ["Noclip"] = "Đi xuyên tường", ["Anti AFK"] = "Chống treo máy (Anti-AFK)",
+    ["FPS Boost"] = "Tối ưu FPS", ["No Rendering"] = "Tắt dựng hình",
+    ["Disable 3D Rendering"] = "Tắt dựng hình 3D", ["Remove Textures"] = "Xóa vân bề mặt",
+    ["Fullbright"] = "Làm sáng ban đêm", ["Player ESP"] = "Hiện vị trí người chơi",
+    ["Egg ESP"] = "Hiện vị trí trứng", ["Tracers"] = "Đường chỉ dẫn", ["Boxes"] = "Khung hộp",
+
+    -- Tab Webhook
+    ["Webhook URL"] = "Đường dẫn Webhook", ["Test Webhook"] = "Thử gửi Webhook",
+    ["Send on Steal"] = "Gửi khi trộm xong", ["Send on Hatch"] = "Gửi khi trứng nở",
+    ["Send on Rare Egg"] = "Gửi khi thấy trứng hiếm", ["Send on Monster Chest"] = "Gửi khi nhận rương",
+    ["Ping Everyone"] = "Tag @everyone", ["Ping Here"] = "Tag @here", ["No Ping"] = "Không tag",
+    ["Custom Message"] = "Tin nhắn tùy chỉnh",
+
+    -- Tab Cài đặt (Settings)
     ["Import settings"] = "Nhập cài đặt", ["Import"] = "Nhập",
     ["Reset position & size"] = "Đặt lại vị trí & cỡ", ["Reset"] = "Đặt lại",
     ["Export settings"] = "Xuất cài đặt", ["UI scale"] = "Tỷ lệ giao diện",
     ["Theme"] = "Màu giao diện", ["Open / close the hub"] = "Mở / đóng hub",
-    ["Toggle flight"] = "Bật / tắt bay", ["Start minimised"] = "Thu nhỏ khi chạy",
-    ["Search settings..."] = "Tìm kiếm cài đặt...", ["Copy"] = "Sao chép",
-    ["Noclip"] = "Đi xuyên tường", ["Infinite Jump"] = "Nhảy vô hạn",
-    ["Anti AFK"] = "Chống treo máy", ["FPS Boost"] = "Tối ưu FPS",
+    ["Start minimised"] = "Thu nhỏ khi chạy", ["Search settings..."] = "Tìm kiếm cài đặt...",
+    ["Copy"] = "Sao chép", ["Save Config"] = "Lưu cấu hình", ["Load Config"] = "Tải cấu hình",
 
     -- Bảng độ hiếm (Rarities)
     ["Common"] = "Thường", ["Uncommon"] = "Không phổ biến", ["Rare"] = "Hiếm",
     ["Epic"] = "Sử thi", ["Legendary"] = "Huyền thoại", ["Mythic"] = "Thần thoại",
-    ["Cosmic"] = "Vũ trụ", ["Secret"] = "Bí mật", ["Eternal"] = "Vĩnh hằng", ["Divine"] = "Thần thánh"
+    ["Cosmic"] = "Vũ trụ", ["Secret"] = "Bí mật", ["Eternal"] = "Vĩnh hằng",
+    ["Divine"] = "Thần thánh", ["Celestial"] = "Thiên thể", ["Prismatic"] = "Lăng kính"
 }
 
 local sortedKeys = {}
@@ -183,7 +234,7 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 5. Module Hook Toggle gốc (Nhận diện chính xác theo vị trí thực trên màn hình)
+-- 6. Module Hook Toggle gốc (Nhận diện dứt khoát trạng thái BẬT/TẮT theo vị trí thực)
 local function hookToggleElement(track)
     if track:GetAttribute("ToggleHooked") then return end
 
@@ -217,7 +268,6 @@ local function hookToggleElement(track)
 
         local trackW = track.AbsoluteSize.X
         if trackW > 0 and knob then
-            -- Tính vị trí thực tế trên màn hình của con trượt so với thân công tắc
             local relX = knob.AbsolutePosition.X - track.AbsolutePosition.X
             local isOn = relX > (trackW * 0.28)
 
@@ -238,11 +288,11 @@ local function hookToggleElement(track)
     end)
 end
 
--- 6. Áp dụng phong cách đồ họa sáng sủa & font chữ sắc nét
+-- 7. Áp dụng phong cách đồ họa sáng sủa & tối ưu độ sắc nét font chữ
 local function applyModernVisuals(obj)
     if obj:GetAttribute("IsLangToggle") then return end
 
-    -- 6.1. Tự động nhận diện công tắc trượt
+    -- 7.1. Tự động nhận diện công tắc trượt
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
         if sz.X >= 26 and sz.X <= 65 and sz.Y >= 14 and sz.Y <= 32 and sz.X > (sz.Y * 1.2) then
@@ -254,7 +304,7 @@ local function applyModernVisuals(obj)
     if obj:GetAttribute("RestyledModern") then return end
     obj:SetAttribute("RestyledModern", true)
 
-    -- 6.2. Nâng cấp Panel & Khung chứa
+    -- 7.2. Nâng cấp Panel & Khung chứa
     if obj:IsA("Frame") then
         if obj.BackgroundTransparency < 0.9 then
             if obj.AbsoluteSize.X >= 280 and obj.AbsoluteSize.Y >= 180 then
@@ -279,7 +329,7 @@ local function applyModernVisuals(obj)
             end
         end
 
-    -- 6.3. Tối ưu văn bản hiển thị
+    -- 7.3. Tối ưu màu chữ hiển thị (Tiêu đề trắng tinh, mô tả bạc sáng)
     elseif obj:IsA("TextLabel") then
         if obj.TextSize >= 13 then
             obj.Font = THEME.FontBold
@@ -289,7 +339,7 @@ local function applyModernVisuals(obj)
             obj.TextColor3 = THEME.TextSub
         end
 
-    -- 6.4. Nút bấm thông thường
+    -- 7.4. Nút bấm thông thường
     elseif obj:IsA("TextButton") or obj:IsA("ImageButton") then
         if obj:IsA("TextButton") then
             obj.Font = THEME.FontBold
@@ -321,7 +371,7 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 7. Vòng lặp điều phối chính: Dịch thuật + Nút gạt ngôn ngữ + Giữ kết nối giao diện
+-- 8. Vòng lặp điều phối chính: Dịch tĩnh, Dịch bộ đếm động, Nút gạt ngôn ngữ
 task.spawn(function()
     local searchReplaced = false
 
@@ -349,7 +399,7 @@ task.spawn(function()
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
-                            -- 7.1. Xử lý dịch thuật nhãn chữ
+                            -- 8.1. Xử lý văn bản
                             if desc:IsA("TextLabel") or desc:IsA("TextButton") then
                                 local txt = desc.Text
 
@@ -364,28 +414,36 @@ task.spawn(function()
                                         desc.Visible = false
                                     end
                                 else
-                                    if not desc:GetAttribute("IsLangToggle") and not isDynamicValue(txt) then
-                                        if not desc:GetAttribute("OriginalText") and txt ~= "" then
-                                            desc:SetAttribute("OriginalText", txt)
-                                        end
-
-                                        local original = desc:GetAttribute("OriginalText") or txt
-
-                                        if getgenv().RonneiTranslateVN then
-                                            if fullTransTable[original] then
-                                                desc.Text = fullTransTable[original]
-                                            else
-                                                local translatedText = original
-                                                for _, en in ipairs(sortedKeys) do
-                                                    if string.find(translatedText, en, 1, true) then
-                                                        translatedText = safeReplace(translatedText, en, fullTransTable[en])
-                                                    end
-                                                end
-                                                desc.Text = translatedText
+                                    if not desc:GetAttribute("IsLangToggle") and not isPureMetric(txt) then
+                                        local low = txt:lower()
+                                        -- Xử lý dòng đếm thống kê thời gian thực mà không lưu cache tĩnh
+                                        if low:find("placed") or low:find("hatched") or low:find("banked") or low:find("lost") or low:find("re%-grabs") or low:find("idle") then
+                                            if getgenv().RonneiTranslateVN then
+                                                desc.Text = translateDynamicCounters(txt)
                                             end
                                         else
-                                            if desc:GetAttribute("OriginalText") then
-                                                desc.Text = desc:GetAttribute("OriginalText")
+                                            if not desc:GetAttribute("OriginalText") and txt ~= "" then
+                                                desc:SetAttribute("OriginalText", txt)
+                                            end
+
+                                            local original = desc:GetAttribute("OriginalText") or txt
+
+                                            if getgenv().RonneiTranslateVN then
+                                                if fullTransTable[original] then
+                                                    desc.Text = fullTransTable[original]
+                                                else
+                                                    local translatedText = original
+                                                    for _, en in ipairs(sortedKeys) do
+                                                        if string.find(translatedText, en, 1, true) then
+                                                            translatedText = safeReplace(translatedText, en, fullTransTable[en])
+                                                        end
+                                                    end
+                                                    desc.Text = translatedText
+                                                end
+                                            else
+                                                if desc:GetAttribute("OriginalText") then
+                                                    desc.Text = desc:GetAttribute("OriginalText")
+                                                end
                                             end
                                         end
                                     end
@@ -406,7 +464,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 7.2. Thay thế Avatar bản quyền
+                        -- 8.2. Thay thế Avatar bản quyền
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
@@ -421,7 +479,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 7.3. Thanh bật/tắt ngôn ngữ Tiếng Việt & English
+                        -- 8.3. Thanh bật/tắt ngôn ngữ Tiếng Việt & English
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
