@@ -1,12 +1,12 @@
 -- ==============================================================================
---  RONNEI HUB - 100% CLEAN BEST PET (NO POPUP / NO FLOATING GUI) + FULL VN
+--  RONNEI HUB - 100% PRESERVED LOGIC + FIXED PET TEXTURE + PURGED EXTERNAL JUNK
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- 1. Khởi chạy song song Script Gốc và Lennon Hub chạy ngầm
+-- 1. Khởi chạy Script Gốc và Lennon Hub chạy ngầm
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9ee4edde227ac85f50872bf9e4226508.lua"))()
@@ -24,7 +24,7 @@ local NEW_IMAGE = "rbxassetid://125111940452696"
 
 getgenv().RonneiTranslateVN = false
 
--- 2. Cấu hình bảng màu giao diện sáng sủa & tương phản cao
+-- 2. Bảng màu tương phản cao (High-Contrast Slate Theme)
 local THEME = {
     Background    = Color3.fromRGB(28, 31, 42),
     Secondary     = Color3.fromRGB(38, 42, 56),
@@ -63,6 +63,7 @@ local function translateDynamicCounters(txt)
     res = res:gsub("Re%-grabs", "Nhặt lại"):gsub("re%-grabs", "nhặt lại")
     res = res:gsub("Placed", "Đã đặt"):gsub("placed", "đã đặt")
     res = res:gsub("Hatched", "Đã nở"):gsub("hatched", "đã nở")
+    res = res:gsub("going for (.+) Egg", "Đang săn Trứng %1")
     res = res:gsub("not training", "đang nghỉ"):gsub("earned", "kiếm được"):gsub("this session", "phiên này")
     res = res:gsub("quietened", "đã giảm tải"):gsub("effects", "hiệu ứng")
     res = res:gsub("(%d+)%s*pages", "%1 trang"):gsub("up to (%d+) servers", "quét tới %1 server")
@@ -70,7 +71,7 @@ local function translateDynamicCounters(txt)
     return res
 end
 
--- 5. Từ điển dịch tiếng Việt chuẩn xác
+-- 5. Từ điển dịch tiếng Việt chuẩn xác toàn bộ hệ thống
 local fullTransTable = {
     ["Monster"] = "Quái vật", ["Auto Steal"] = "Tự động trộm", ["Filters"] = "Bộ lọc",
     ["Plot"] = "Khu đất", ["Server"] = "Máy chủ", ["Misc"] = "Tính năng phụ",
@@ -260,7 +261,7 @@ end
 
 -- 6. Hook trực tiếp Toggle theo vị trí thực tế
 local function hookToggleElement(track)
-    if track:GetAttribute("ToggleHooked") or track:GetAttribute("IsRealBestPetCard") then return end
+    if track:GetAttribute("ToggleHooked") then return end
 
     local knob = nil
     for _, child in ipairs(track:GetChildren()) do
@@ -312,11 +313,20 @@ local function hookToggleElement(track)
     end)
 end
 
--- 7. Bộ xử lý triệt để: Bóc tách Best Pet Card & Vô hiệu hóa toàn bộ GUI ngoài của Lennon Hub
-local embeddedPetCard = nil
-local processedGuis = {}
+-- Biến lưu trữ đối tượng thẻ Best Pet duy nhất
+local mountedBestEggCard = nil
 
-local function processAndCleanLennonHub()
+local function isInsideBestPet(obj)
+    if not mountedBestEggCard then return false end
+    return obj == mountedBestEggCard or obj:IsDescendantOf(mountedBestEggCard)
+end
+
+-- 7. Tìm đúng Card Best Pet từ Lennon Hub
+local function findOriginalBestPetCard()
+    if mountedBestEggCard and mountedBestEggCard.Parent then
+        return mountedBestEggCard
+    end
+
     local containers = {CoreGui}
     if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
         table.insert(containers, LocalPlayer.PlayerGui)
@@ -325,68 +335,64 @@ local function processAndCleanLennonHub()
 
     for _, cont in ipairs(containers) do
         for _, gui in ipairs(cont:GetChildren()) do
-            if gui:IsA("ScreenGui") and gui.Name ~= "RonneiHub" then
-                local isLennon = false
-                local petCardCandidate = nil
-
+            if gui:IsA("ScreenGui") and gui.Name ~= "RonneiHub" and not gui:FindFirstChild("RonneiLangModule", true) then
                 for _, desc in ipairs(gui:GetDescendants()) do
-                    if desc:IsA("TextLabel") then
-                        local t = desc.Text:upper()
-                        if t == "BEST EGG" then
-                            -- Dò tìm thẻ chứa Best Egg
-                            local p = desc.Parent
-                            while p and p.Parent and not p.Parent:IsA("ScreenGui") do
-                                if p.AbsoluteSize.Y >= 35 and p.AbsoluteSize.Y <= 95 then
-                                    petCardCandidate = p
+                    if desc:IsA("TextLabel") and desc.Text:upper() == "BEST EGG" then
+                        local card = desc.Parent
+                        while card and card.Parent and not card.Parent:IsA("ScreenGui") do
+                            local hasImg = false
+                            for _, sub in ipairs(card:GetDescendants()) do
+                                if sub:IsA("ImageLabel") or sub:IsA("ViewportFrame") then
+                                    hasImg = true
                                     break
                                 end
-                                p = p.Parent
                             end
-                            isLennon = true
-                        elseif t:find("LENNON") or t:find("TOP 4 SYSTEM") or t:find("RARITY FILTER") or t:find("TELEPORT") then
-                            isLennon = true
+                            if hasImg and card.AbsoluteSize.Y >= 35 and card.AbsoluteSize.Y <= 95 then
+                                mountedBestEggCard = card
+                                return card
+                            end
+                            card = card.Parent
                         end
-                    elseif desc:IsA("TextButton") and desc.Text:find("Reset GUIs") then
-                        isLennon = true
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+-- 8. Quét dọn sạch sẽ toàn bộ UI thừa của Lennon Hub ngoài màn hình
+local function purgeLennonExternalJunk(activeRonneiChild)
+    local containers = {CoreGui}
+    if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
+        table.insert(containers, LocalPlayer.PlayerGui)
+    end
+    if gethui then table.insert(containers, gethui()) end
+
+    for _, cont in ipairs(containers) do
+        for _, gui in ipairs(cont:GetChildren()) do
+            if gui:IsA("ScreenGui") and gui ~= activeRonneiChild and gui.Name ~= "RonneiHub" and not gui:FindFirstChild("RonneiLangModule", true) then
+                local isLennonGui = false
+                for _, desc in ipairs(gui:GetDescendants()) do
+                    if desc:IsA("TextLabel") and (desc.Text:find("LENNON") or desc.Text:find("TOP 4 SYSTEM") or desc.Text:find("TELEPORT")) then
+                        isLennonGui = true
+                        break
                     end
                 end
 
-                if isLennon then
-                    -- Lưu lại thẻ Best Pet nếu chưa lấy
-                    if petCardCandidate and not embeddedPetCard then
-                        embeddedPetCard = petCardCandidate
-                        embeddedPetCard:SetAttribute("IsRealBestPetCard", true)
-                        
-                        for _, sub in ipairs(embeddedPetCard:GetDescendants()) do
-                            sub:SetAttribute("IsRealBestPetCard", true)
-                            -- Ẩn vĩnh viễn nút mũi tên v để không kích hoạt bung menu ngoài
-                            if (sub:IsA("TextButton") or sub:IsA("ImageButton")) and (sub.Text:lower():find("v") or sub.Size.X.Offset <= 32) then
-                                sub.Visible = false
-                            end
-                        end
-                    end
-
-                    -- Khóa và ẩn hoàn toàn ScreenGui gốc của Lennon Hub sau khi đã nhúng thẻ vào Ronnei Hub
-                    if embeddedPetCard and not gui:IsAncestorOf(embeddedPetCard) then
-                        if gui.Enabled then
-                            gui.Enabled = false
-                        end
-                        if not processedGuis[gui] then
-                            processedGuis[gui] = true
-                            gui:GetPropertyChangedSignal("Enabled"):Connect(function()
-                                if gui.Enabled and embeddedPetCard and not gui:IsAncestorOf(embeddedPetCard) then
-                                    gui.Enabled = false
-                                end
-                            end)
-                        end
-                    end
-
-                    -- Đẩy tất cả cửa sổ phụ và nút bấm còn lại ra khỏi màn hình
+                if isLennonGui then
                     for _, child in ipairs(gui:GetChildren()) do
-                        if child ~= embeddedPetCard and not child:IsAncestorOf(embeddedPetCard) then
+                        if not isInsideBestPet(child) then
                             child.Visible = false
-                            if child:IsA("GuiObject") then
-                                child.Position = UDim2.new(100, 0, 100, 0)
+                        end
+                    end
+                    for _, desc in ipairs(gui:GetDescendants()) do
+                        if desc:IsA("GuiObject") and not isInsideBestPet(desc) then
+                            local t = (desc:IsA("TextLabel") or desc:IsA("TextButton")) and desc.Text:upper() or ""
+                            local n = desc.Name:lower()
+                            if t:find("TOP 4 SYSTEM") or t:find("LENNON") or t:find("RESET GUI") 
+                               or t:find("TELEPORT") or n:find("logo") or n:find("button") then
+                                desc.Visible = false
                             end
                         end
                     end
@@ -394,12 +400,11 @@ local function processAndCleanLennonHub()
             end
         end
     end
-    return embeddedPetCard
 end
 
--- 8. Áp dụng phong cách sáng sủa (Bỏ qua thẻ Pet)
+-- 9. Nâng cấp đồ họa sáng sủa (Bỏ qua hoàn toàn Best Pet Card)
 local function applyModernVisuals(obj)
-    if obj:GetAttribute("IsLangToggle") or obj:GetAttribute("IsRealBestPetCard") then return end
+    if obj:GetAttribute("IsLangToggle") or isInsideBestPet(obj) then return end
 
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
@@ -476,7 +481,7 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 9. Vòng lặp điều phối chính
+-- 10. Vòng lặp điều phối chính
 task.spawn(function()
     local searchReplaced = false
 
@@ -501,13 +506,27 @@ task.spawn(function()
                     end)
 
                     if isHub then
-                        local bestPetCard = processAndCleanLennonHub()
+                        local bestPetCard = findOriginalBestPetCard()
+                        pcall(purgeLennonExternalJunk, child)
+
+                        -- Tự động dọn sạch thanh header Lennon Hub nếu bị sót vào Ronnei Hub
+                        for _, desc in ipairs(child:GetDescendants()) do
+                            if desc:IsA("TextLabel") and desc.Text:upper():find("LENNON HUB") and not isInsideBestPet(desc) then
+                                local junk = desc
+                                while junk.Parent and junk.Parent ~= child and not junk.Parent:IsA("ScreenGui") do
+                                    if junk.Parent:FindFirstChildOfClass("UIListLayout") then break end
+                                    junk = junk.Parent
+                                end
+                                junk.Visible = false
+                                junk:Destroy()
+                            end
+                        end
 
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
-                            -- 9.1. Gắn cố định thẻ Best Pet vào ngay TRÊN hàng "Tự động trộm"
-                            if desc:IsA("TextLabel") and (desc.Text == "Tự động trộm" or desc.Text == "Auto Steal") and desc.AbsolutePosition.X > 160 then
+                            -- 10.1. Ghim thẻ Best Pet vào ngay TRÊN hàng "Tự động trộm"
+                            if desc:IsA("TextLabel") and (desc.Text == "Tự động trộm" or desc.Text == "Auto Steal") and desc.AbsolutePosition.X > 160 and not isInsideBestPet(desc) then
                                 local autoStealRow = desc
                                 while autoStealRow.Parent and not autoStealRow.Parent:IsA("ScreenGui") do
                                     if autoStealRow.Parent:FindFirstChildOfClass("UIListLayout") then
@@ -527,7 +546,14 @@ task.spawn(function()
                                     bestPetCard.AnchorPoint = Vector2.new(0, 0)
                                     bestPetCard.BackgroundColor3 = THEME.Secondary
 
-                                    -- Đặt LayoutOrder để thẻ Pet luôn nằm ngay trước hàng Auto Steal
+                                    -- Ẩn nút mũi tên v bên trong thẻ để tránh bấm làm bung cửa sổ TOP 4
+                                    for _, sub in ipairs(bestPetCard:GetDescendants()) do
+                                        if sub:IsA("GuiButton") or (sub:IsA("TextLabel") and (sub.Text == "v" or sub.Text == "V" or sub.Text == "⌄")) then
+                                            sub.Visible = false
+                                        end
+                                    end
+
+                                    -- Điều chỉnh LayoutOrder để Best Pet luôn nằm ngay trước hàng Auto Steal
                                     local listLayout = listContainer:FindFirstChildOfClass("UIListLayout")
                                     if listLayout then
                                         listLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -546,8 +572,8 @@ task.spawn(function()
                                 end
                             end
 
-                            -- 9.2. Dịch thuật toàn bộ giao diện (Bỏ qua thẻ Pet)
-                            if (desc:IsA("TextLabel") or desc:IsA("TextButton")) and not desc:GetAttribute("IsRealBestPetCard") then
+                            -- 10.2. Dịch thuật toàn văn (Bỏ qua hoàn toàn thẻ Pet)
+                            if (desc:IsA("TextLabel") or desc:IsA("TextButton")) and not isInsideBestPet(desc) then
                                 local txt = desc.Text
 
                                 if txt == "BK's Hub" or txt == "BKs Hub" then
@@ -565,7 +591,7 @@ task.spawn(function()
                                         local low = txt:lower()
                                         if low:find("placed") or low:find("hatched") or low:find("banked") or low:find("lost") 
                                            or low:find("re%-grabs") or low:find("idle") or low:find("training") or low:find("quietened") 
-                                           or (low:find("pages") and low:find("server")) then
+                                           or low:find("going for") or (low:find("pages") and low:find("server")) then
                                             if getgenv().RonneiTranslateVN then
                                                 desc.Text = translateDynamicCounters(txt)
                                             end
@@ -596,7 +622,7 @@ task.spawn(function()
                                         end
                                     end
                                 end
-                            elseif desc:IsA("TextBox") and not desc:GetAttribute("IsRealBestPetCard") then
+                            elseif desc:IsA("TextBox") and not isInsideBestPet(desc) then
                                 local pl = desc.PlaceholderText
                                 if not desc:GetAttribute("OrigPlaceholder") and pl ~= "" then
                                     desc:SetAttribute("OrigPlaceholder", pl)
@@ -612,9 +638,38 @@ task.spawn(function()
                             end
                         end
 
-                        -- 9.3. Thay Avatar Header (Không can thiệp vào ảnh Pet)
+                        -- 10.3. Bảo dưỡng camera ViewportFrame và phục hồi hiển thị hình ảnh Pet
+                        if mountedBestEggCard then
+                            for _, vf in ipairs(mountedBestEggCard:GetDescendants()) do
+                                if vf:IsA("ViewportFrame") then
+                                    vf.BackgroundTransparency = 1
+                                    local cam = vf.CurrentCamera
+                                    if not cam or not cam:IsDescendantOf(game) then
+                                        local existingCam = vf:FindFirstChildOfClass("Camera")
+                                        if not existingCam then
+                                            local model = vf:FindFirstChildOfClass("Model") or vf:FindFirstChildWhichIsA("PVInstance")
+                                            if model then
+                                                existingCam = Instance.new("Camera")
+                                                existingCam.Parent = vf
+                                                vf.CurrentCamera = existingCam
+                                                local cf, size = model:GetBoundingBox()
+                                                local dist = math.max(size.X, size.Y, size.Z) * 2.2
+                                                existingCam.CFrame = CFrame.new(cf.Position + Vector3.new(dist * 0.7, dist * 0.5, dist * 0.7), cf.Position)
+                                            end
+                                        else
+                                            vf.CurrentCamera = existingCam
+                                        end
+                                    end
+                                elseif vf:IsA("ImageLabel") then
+                                    vf.ImageTransparency = 0
+                                    vf.Visible = true
+                                end
+                            end
+                        end
+
+                        -- 10.4. Thay thế Avatar Header (Tuyệt đối không đụng vào ảnh Pet)
                         for _, img in ipairs(child:GetDescendants()) do
-                            if (img:IsA("ImageLabel") or img:IsA("ImageButton")) and not img:GetAttribute("IsRealBestPetCard") then
+                            if (img:IsA("ImageLabel") or img:IsA("ImageButton")) and not isInsideBestPet(img) then
                                 local sz = img.AbsoluteSize
                                 if sz.X >= 20 and sz.X <= 65 and math.abs(sz.X - sz.Y) <= 8 then
                                     local name = img.Name:lower()
@@ -629,7 +684,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 9.4. Nút gạt ngôn ngữ Tiếng Việt & English
+                        -- 10.5. Thanh công tắc ngôn ngữ Tiếng Việt & English
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
