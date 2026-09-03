@@ -1,5 +1,5 @@
 -- ==============================================================================
---  RONNEI HUB - 100% FULL TRANSLATION + LIVE COUNTER TRANSLATOR + HIGH CONTRAST
+--  RONNEI HUB - 100% VIETNAMESE + DYNAMIC COUNTER TRANSLATOR + HIGH CONTRAST
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -18,58 +18,67 @@ local NEW_IMAGE = "rbxassetid://125111940452696"
 
 getgenv().RonneiTranslateVN = false
 
--- 2. Cấu hình bảng màu giao diện sáng sủa & tương phản cao
+-- 2. Bảng màu tương phản cao (High-Contrast Slate Theme)
 local THEME = {
-    Background    = Color3.fromRGB(28, 31, 42),       -- Nền chính sáng hơn, sâu mắt
-    Secondary     = Color3.fromRGB(38, 42, 56),       -- Khối container/item nổi bật rõ ràng
-    Accent        = Color3.fromRGB(0, 230, 120),      -- Xanh neon chủ đạo
-    Stroke        = Color3.fromRGB(75, 83, 110),      -- Viền khung sắc nét
+    Background    = Color3.fromRGB(28, 31, 42),
+    Secondary     = Color3.fromRGB(38, 42, 56),
+    Accent        = Color3.fromRGB(0, 230, 120),
+    Stroke        = Color3.fromRGB(75, 83, 110),
     
-    -- Trạng thái Toggle dứt khoát
-    ToggleOn      = Color3.fromRGB(0, 230, 118),      -- BẬT: Xanh Emerald sáng rực rỡ
-    ToggleOnGlow  = Color3.fromRGB(100, 255, 180),    -- Viền sáng bổ trợ khi Bật
-    ToggleOff     = Color3.fromRGB(46, 50, 66),       -- TẮT: Xám graphite gọn gàng
-    KnobOn        = Color3.fromRGB(255, 255, 255),     -- Nút gạt: Trắng tinh khi Bật
-    KnobOff       = Color3.fromRGB(145, 152, 172),    -- Nút gạt: Xám bạc khi Tắt
+    ToggleOn      = Color3.fromRGB(0, 230, 118),
+    ToggleOnGlow  = Color3.fromRGB(100, 255, 180),
+    ToggleOff     = Color3.fromRGB(46, 50, 66),
+    KnobOn        = Color3.fromRGB(255, 255, 255),
+    KnobOff       = Color3.fromRGB(145, 152, 172),
     
-    -- Chữ hiển thị
-    TextMain      = Color3.fromRGB(255, 255, 255),    -- Trắng sáng 100% cho tiêu đề
-    TextSub       = Color3.fromRGB(195, 202, 220),    -- Bạc sáng rõ ràng cho mô tả
+    TextMain      = Color3.fromRGB(255, 255, 255),
+    TextSub       = Color3.fromRGB(195, 202, 220),
     Font          = Enum.Font.GothamMedium,
     FontBold      = Enum.Font.GothamBold
 }
 
--- 3. Kiểm tra các giá trị đo lường thuần túy (tránh can thiệp làm đơ FPS, Ping)
+-- 3. Kiểm tra các giá trị đo lường thuần túy không được can thiệp
 local function isPureMetric(txt)
     if not txt or txt == "" then return true end
     local low = txt:lower()
     if low:find("fps") or low:find("ms") or low:find("ping") then return true end
     if txt:match("^%s*[%$]?%d+[%d%.]*%s*[a-zA-Z%%/%$]*%s*$") then return true end
-    if txt:match("%d+%s*studs/s") or txt:match("%d+%%") or txt:match("%d+%s*pages") then return true end
+    if txt:match("%d+%s*studs/s") or txt:match("%d+%%") then return true end
     if txt:match("%d+m%s*%d+s") or txt:match("%d+:%d+") then return true end
     return false
 end
 
--- 4. Bộ chuyển ngữ dòng thống kê đếm thời gian thực (Live Counters)
+-- 4. Bộ chuyển ngữ dòng thống kê / thông báo thời gian thực
 local function translateDynamicCounters(txt)
     local res = txt
+    -- Thống kê trộm & ấp
     res = res:gsub("Idle", "Đang chờ"):gsub("idle", "đang chờ")
     res = res:gsub("Banked", "Đã cất"):gsub("banked", "đã cất")
     res = res:gsub("Lost", "Mất"):gsub("lost", "mất")
     res = res:gsub("Re%-grabs", "Nhặt lại"):gsub("re%-grabs", "nhặt lại")
     res = res:gsub("Placed", "Đã đặt"):gsub("placed", "đã đặt")
     res = res:gsub("Hatched", "Đã nở"):gsub("hatched", "đã nở")
+    
+    -- Trạng thái máy chạy bộ
+    res = res:gsub("not training", "đang nghỉ"):gsub("earned", "kiếm được"):gsub("this session", "phiên này")
+    
+    -- Tối ưu hóa & Quét server
+    res = res:gsub("quietened", "đã giảm tải"):gsub("effects", "hiệu ứng")
+    res = res:gsub("(%d+)%s*pages", "%1 trang"):gsub("up to (%d+) servers", "quét tới %1 server")
+    
+    -- Popup thông báo nhặt trứng
+    res = res:gsub("banked (.+) Egg", "Đã cất Trứng %1")
     return res
 end
 
--- 5. Từ điển dịch tiếng Việt chuẩn xác toàn bộ hệ thống
+-- 5. Từ điển dịch tiếng Việt đầy đủ 100%
 local fullTransTable = {
     -- Sidebar / Tabs
     ["Monster"] = "Quái vật", ["Auto Steal"] = "Tự động trộm", ["Filters"] = "Bộ lọc",
     ["Plot"] = "Khu đất", ["Server"] = "Máy chủ", ["Misc"] = "Tính năng phụ",
     ["Webhook"] = "Webhook", ["Settings"] = "Cài đặt",
     
-    -- Danh mục & Headers
+    -- Headers & Section Titles
     ["EVENT"] = "SỰ KIỆN", ["STEALING"] = "TRỘM TRỨNG", ["YOUR STUFF"] = "ĐỒ CỦA BẠN",
     ["CONFIG"] = "CẤU HÌNH", ["SELLING"] = "BÁN VẬT PHẨM", ["TREADMILL TRAINING"] = "LUYỆN TẬP MÁY CHẠY",
     ["AUTOMATE IT"] = "TỰ ĐỘNG HÓA", ["TARGETING"] = "MỤC TIÊU", ["SPEED"] = "TỐC ĐỘ",
@@ -80,9 +89,10 @@ local fullTransTable = {
     ["FLIGHT"] = "BAY LƯỢN", ["PERFORMANCE"] = "HIỆU NĂNG", ["CONNECTION"] = "KẾT NỐI",
     ["GLOBAL FEED"] = "BẢNG TIN TOÀN CẦU", ["WHAT TO SEND"] = "LOẠI DỮ LIỆU GỬI",
     ["HOW MUCH NOISE"] = "MỨC ĐỘ THÔNG BÁO", ["THE MESSAGE"] = "NỘI DUNG TIN NHẮN", ["WINDOW"] = "CỬA SỔ",
-    ["MOVEMENT"] = "DI CHUYỂN", ["VISUALS"] = "HIỂN THỊ",
+    ["EGGS ON THE MAP"] = "TRỨNG TRÊN BẢN ĐỒ", ["EGGS ON YOUR PLOT"] = "TRỨNG TRÊN ĐẤT CỦA BẠN",
+    ["STATS PANEL"] = "BẢNG THỐNG KÊ",
 
-    -- Tab Khu đất (Plot) - Trứng & Thú cưng (Eggs & Pets)
+    -- Tab Khu đất (Plot) - Trứng, Ấp & Nâng cấp
     ["Auto Place Eggs"] = "Tự động đặt trứng",
     ["Never place this rarity or rarer"] = "Không đặt từ độ hiếm này trở lên",
     ["keeps your best eggs in the bag instead of committing them to a hatch timer"] = "giữ trứng xịn nhất trong túi thay vì đưa vào thời gian đếm ấp",
@@ -95,29 +105,97 @@ local fullTransTable = {
     ["Auto Equip Best Pets"] = "Tự trang bị pet xịn nhất",
     ["keeps your best pets out at all times — hatch something better and it swaps, even when your pen is full"] = "luôn dùng pet mạnh nhất — mở ra con tốt hơn sẽ tự thay thế kể cả khi chuồng đầy",
     ["keeps your best pets out at all times - hatch something better and it swaps, even when your pen is full"] = "luôn dùng pet mạnh nhất — mở ra con tốt hơn sẽ tự thay thế kể cả khi chuồng đầy",
-    ["Auto Fuse Pets"] = "Tự động ghép Pet",
-    ["Auto Fuse"] = "Tự ghép pet",
-
-    -- Tab Khu đất (Plot) - Nâng cấp, Máy chạy & Bán vật phẩm
     ["Auto Upgrade Trails"] = "Tự nâng cấp vệt sáng (Trails)",
-    ["Auto Upgrade Speed"] = "Tự nâng cấp tốc độ",
-    ["Auto Upgrade Carry"] = "Tự nâng cấp sức vác",
-    ["Auto Upgrade Capacity"] = "Tự nâng cấp sức chứa",
-    ["Auto Upgrade Plot"] = "Tự nâng cấp khu đất",
-    ["Auto Upgrade Base"] = "Tự nâng cấp căn cứ",
-    ["Auto Upgrade Treadmill"] = "Tự nâng cấp máy chạy",
-    ["Auto Treadmill"] = "Tự tập máy chạy",
-    ["Auto Train"] = "Tự động luyện tập",
-    ["Train on best treadmill"] = "Tập ở máy chạy tốt nhất",
-    ["Select Treadmill"] = "Chọn máy chạy",
-    ["Auto Sell Pets"] = "Tự động bán pet",
+
+    -- Tab Khu đất (Plot) - Bán (Selling) & Máy chạy (Treadmill)
+    ["What selling will never touch"] = "Những thứ không bao giờ bị bán",
+    ["favourited · equipped · in the fuse machine · in the pen · placed on your plot"] = "yêu thích · đang trang bị · trong máy ghép · trong chuồng · đặt trên đất",
+    ["Sell anything earning under ($/s)"] = "Bán mọi thứ kiếm dưới ($/s)",
+    ["required — nothing is sold while this is blank · type 250k, 1.5m or 2b"] = "bắt buộc — không bán gì nếu để trống · gõ 250k, 1.5m hoặc 2b",
+    ["required - nothing is sold while this is blank · type 250k, 1.5m or 2b"] = "bắt buộc — không bán gì nếu để trống · gõ 250k, 1.5m hoặc 2b",
+    ["Auto Sell Pets"] = "Tự động bán thú cưng",
+    ["sells the worst ones first, and only below the floor above"] = "bán con yếu nhất trước, và chỉ bán dưới mức sàn ở trên",
     ["Auto Sell Eggs"] = "Tự động bán trứng",
-    ["Never sell this rarity or rarer"] = "Không bán từ độ hiếm này trở lên",
-    ["Keep favorited"] = "Giữ lại pet yêu thích",
-    ["Keep mutated"] = "Giữ lại pet đột biến",
-    ["Sell all"] = "Bán tất cả",
-    ["Sell now"] = "Bán ngay lập tức",
-    ["Sell delay"] = "Độ trễ khi bán",
+    ["spare eggs only · anything on your plot is never touched"] = "chỉ bán trứng thừa · không bao giờ đụng đến trứng trên đất",
+    ["Train when Auto Steal is off"] = "Tập khi tắt Tự động trộm",
+    ["Train when Tự động trộm is off"] = "Tập khi tắt Tự động trộm",
+    ["on = trains whenever there is nothing worth stealing"] = "bật = tập luyện bất cứ khi nào không có gì đáng trộm",
+
+    -- Tab Máy chủ (Server)
+    ["Auto Hop"] = "Tự động đổi server", ["Hop now"] = "Đổi server ngay", ["Hop"] = "Đổi ngay",
+    ["How hard to look"] = "Độ sâu tìm server", ["Skip full servers"] = "Bỏ qua server đầy",
+    ["Reload hub after hopping"] = "Nạp lại hub sau khi đổi",
+    ["turn off if your autoexec already loads the hub in every server"] = "tắt nếu autoexec của bạn đã tự nạp hub khi vào server",
+    ["Fewest players"] = "Ít người nhất", ["Most players"] = "Đông người nhất",
+    ["Hop after a while anyway"] = "Đổi server sau một khoảng thời gian",
+    ["leave for another server straight away"] = "chuyển sang server khác ngay lập tức",
+    ["a full server will just bounce you straight back out"] = "server đầy sẽ khiến bạn bị văng ra ngoài",
+    ["pages of the server list to collect, 100 servers each · Roblox rate limits this, so more pages takes longer"] = "số trang danh sách server cần quét, 100 server mỗi trang · Roblox giới hạn tốc độ, quét nhiều trang sẽ lâu hơn",
+    ["skip servers emptier than this · blank for any"] = "bỏ qua server vắng hơn mức này · để trống để chọn mọi server",
+    ["skip servers busier than this · fewer players means less competition for the same eggs · blank for any"] = "bỏ qua server đông hơn mức này · ít người chơi hơn giúp giảm cạnh tranh trứng · để trống để chọn mọi server",
+
+    -- Tab Tính năng phụ (Misc) - ESP, Bay, Hiệu năng
+    ["Egg ESP"] = "ESP Trứng",
+    ["each egg's $/s, rarity, weight and mutations floating over it · no distance limit"] = "hiển thị $/s, độ hiếm, trọng lượng và đột biến nổi trên quả · không giới hạn cự ly",
+    ["Show ESP on"] = "Hiển thị ESP cho",
+    ["\"matching my filters\" tracks whatever Auto Steal is set to"] = "\"khớp bộ lọc\" theo dõi mục tiêu theo thiết lập Tự động trộm",
+    ["\"matching my filters\" tracks whatever Tự động trộm is set to"] = "\"khớp bộ lọc\" theo dõi mục tiêu theo thiết lập Tự động trộm",
+    ["Eggs matching..."] = "Trứng khớp bộ lọc...",
+    ["Beam to current target"] = "Tia dẫn đường tới mục tiêu",
+    ["draws a line to the egg Auto Steal picked · easy to lose among fifty cards otherwise"] = "kẻ tia chỉ đường tới quả trứng đã chọn · tránh bị lạc giữa hàng tá quả trứng",
+    ["draws a line to the egg Tự động trộm picked · easy to lose among fifty cards otherwise"] = "kẻ tia chỉ đường tới quả trứng đã chọn · tránh bị lạc giữa hàng tá quả trứng",
+    ["Plot Egg ESP"] = "ESP Trứng trên đất",
+    ["Khu đất Egg ESP"] = "ESP Trứng trên đất",
+    ["your placed eggs: what each will pay, and the hatch timer · green when ready"] = "trứng đã đặt: thu nhập mỗi quả mang lại và thời gian ấp · màu xanh khi sẵn sàng nở",
+    ["Show Stats Panel"] = "Hiện bảng thống kê",
+    ["small draggable panel: money income, eggs banked, best egg so far"] = "bảng kéo thả nhỏ gọn: thu nhập, số trứng đã cất, quả trứng xịn nhất",
+    ["WASD to fly, space up, Left Ctrl down · holds its altitude when you let go"] = "WASD để bay, Space bay lên, Ctrl trái hạ xuống · giữ nguyên độ cao khi thả phím",
+    ["Flight speed"] = "Tốc độ bay",
+    ["studs per second while flying"] = "studs mỗi giây khi đang bay",
+    ["Flight keybind"] = "Phím tắt bay",
+    ["Unbound"] = "Chưa gán",
+    ["toggles flight without opening the hub"] = "bật / tắt bay mà không cần mở hub",
+    ["Game optimizer"] = "Tối ưu hóa game",
+    ["Cap the frame rate"] = "Khóa tốc độ khung hình (FPS)",
+    ["a low frame rate breaks Bypassed Speed — you get pulled back instead of moving faster, so auto steal gets slower the lower you go"] = "FPS thấp làm lỗi Vượt tốc độ — bạn sẽ bị kéo giật lùi, FPS càng thấp trộm càng chậm",
+    ["a low frame rate breaks Vượt tốc độ tối đa — you get pulled back instead of moving faster, so auto steal gets slower the lower you go"] = "FPS thấp làm lỗi Vượt tốc độ tối đa — bạn sẽ bị kéo giật lùi, FPS càng thấp trộm càng chậm",
+    ["a low frame rate breaks Vượt tốc độ tối đa - you get pulled back instead of moving faster, so auto steal gets slower the lower you go"] = "FPS thấp làm lỗi Vượt tốc độ tối đa — bạn sẽ bị kéo giật lùi, FPS càng thấp trộm càng chậm",
+    ["FPS cap"] = "Giới hạn FPS",
+    ["30 is the lowest — under that the speed bypass stops helping"] = "30 là mức thấp nhất — dưới mức đó việc vượt tốc độ sẽ mất tác dụng",
+    ["30 is the lowest - under that the speed bypass stops helping"] = "30 là mức thấp nhất — dưới mức đó việc vượt tốc độ sẽ mất tác dụng",
+
+    -- Tab Webhook
+    ["Webhook URL"] = "Đường dẫn Webhook",
+    ["your channel -> Edit -> Integrations -> Webhooks -> Sao chép URL · sends a test message"] = "kênh của bạn -> Sửa kênh -> Tích hợp -> Webhooks -> Sao chép URL · gửi tin nhắn thử nghiệm",
+    ["your channel → Edit → Integrations → Webhooks → Sao chép URL · sends a test message"] = "kênh của bạn -> Sửa kênh -> Tích hợp -> Webhooks -> Sao chép URL · gửi tin nhắn thử nghiệm",
+    ["Share my rare pulls"] = "Chia sẻ trứng hiếm nhặt được",
+    ["What gets shared"] = "Dữ liệu được chia sẻ",
+    ["the exact list, so you never have to take our word for it"] = "danh sách dữ liệu chính xác, minh bạch hoàn toàn",
+    ["Show"] = "Xem", ["Preview"] = "Xem trước",
+    ["Egg stolen"] = "Khi trộm được trứng",
+    ["Egg hatched"] = "Khi trứng nở",
+    ["Mutation rolled"] = "Khi ra đột biến",
+    ["Sold pets or eggs"] = "Khi bán thú cưng hoặc trứng",
+    ["Rewards claimed"] = "Khi nhận phần thưởng",
+    ["Only eggs earning over ($/s)"] = "Chỉ gửi trứng kiếm trên ($/s)",
+    ["stolen + hatched only · blank sends everything · type 250k, 1.5m or 2b"] = "chỉ trứng trộm + nở · để trống để gửi tất cả · gõ 250k, 1.5m hoặc 2b",
+    ["stolen + hatched only - blank sends everything - type 250k, 1.5m or 2b"] = "chỉ trứng trộm + nở · để trống để gửi tất cả · gõ 250k, 1.5m hoặc 2b",
+    ["everything · e.g. 50m"] = "tất cả · vd: 50m",
+    ["Rarity floor"] = "Mức độ hiếm sàn",
+    ["this rarity and rarer · stolen + hatched only"] = "độ hiếm này trở lên · chỉ tính trứng trộm + nở",
+    ["this rarity and rarer - stolen + hatched only"] = "độ hiếm này trở lên · chỉ tính trứng trộm + nở",
+    ["Session digest"] = "Báo cáo tóm tắt phiên chơi",
+    ["a running total every so often, whatever else is switched on"] = "gửi bảng tổng kết định kỳ các thông số thu hoạch",
+    ["Ping"] = "Tag nhắc tên",
+    ["No ping"] = "Không tag",
+    ["@everyone only works if the webhook channel allows it"] = "@everyone chỉ hoạt động nếu quyền hạn kênh webhook cho phép",
+    ["Include my username"] = "Kèm tên tài khoản Roblox",
+    ["puts your Roblox name in the footer · off keeps every message anonymous"] = "hiện tên Roblox của bạn ở chân tin nhắn · tắt để ẩn danh hoàn toàn",
+    ["puts your Roblox name in the footer - off keeps every message anonymous"] = "hiện tên Roblox của bạn ở chân tin nhắn · tắt để ẩn danh hoàn toàn",
+    ["Let exported configs carry the URL"] = "Cho phép xuất cấu hình kèm URL Webhook",
+    ["off (recommended) — then a config you share cannot give away your channel"] = "tắt (khuyến nghị) — giúp chia sẻ cấu hình mà không bị lộ webhook",
+    ["off (recommended) - then a config you share cannot give away your channel"] = "tắt (khuyến nghị) — giúp chia sẻ cấu hình mà không bị lộ webhook",
+    ["Any"] = "Bất kỳ",
 
     -- Tab Auto Steal (Trộm trứng)
     ["your Filters tab decides what counts, then takes the most valuable one that does"] = "tab Bộ lọc quyết định điều kiện, sau đó lấy quả giá trị nhất khớp lọc",
@@ -140,9 +218,6 @@ local fullTransTable = {
     ["Gen ($/s) snipe floor"] = "Mức Gen ($/s) tối thiểu",
     ["Bypassed Speed"] = "Vượt tốc độ tối đa",
     ["Bypassed speed cap"] = "Vượt tốc độ tối đa cap",
-    ["Return Speed"] = "Tốc độ quay về",
-    ["Instant Return"] = "Quay về tức thì",
-    ["Anti Guard"] = "Né bảo vệ",
 
     -- Tab Quái vật (Monster)
     ["Feed him one"] = "Cho quái ăn 1 quả", ["Feed"] = "Cho ăn",
@@ -151,7 +226,6 @@ local fullTransTable = {
     ["Auto Hunt Infested Eggs"] = "Tự săn trứng nhiễm", ["Auto Feed"] = "Tự cho ăn",
     ["Auto Claim Chest"] = "Tự nhận rương", ["Keep infested eggs for him"] = "Giữ trứng cho quái",
     ["Never feed this rarity or rarer"] = "Không cho ăn độ hiếm này trở lên", ["Feed anything"] = "Cho ăn tất cả",
-    ["Feed all"] = "Cho ăn hết",
     ["takes the Monster Chest the moment he hits 100%"] = "nhận Rương Quái ngay khi đạt 100%",
     ["waits till theres nothing left worth stealing, then walks over and feeds"] = "đợi hết trứng ngon rồi tự đi cho ăn",
     ["Auto Steal picks up infested eggs as well as ur normal targets"] = "Tự động nhặt cả trứng nhiễm bệnh và mục tiêu thường",
@@ -161,11 +235,10 @@ local fullTransTable = {
     ["turn this off and ur fuel gets planted or sold behind ur back"] = "tắt đi sẽ khiến trứng bị đặt hoặc bán mất",
     ["feeding destroys the egg, so it always picks ur least valuable one"] = "cho ăn sẽ làm mất trứng, luôn chọn quả rẻ nhất",
 
-    -- Tab Bộ lọc (Filters) - Map & Đột biến
+    -- Tab Bộ lọc (Filters)
     ["Matching right now"] = "Đang khớp điều kiện",
     ["Use rarity filter"] = "Lọc theo độ hiếm", ["Use mutation filter"] = "Lọc theo đột biến",
     ["Minimum weight (Kg)"] = "Trọng lượng tối thiểu (Kg)", ["Clear all"] = "Bỏ chọn tất cả",
-    ["Select all"] = "Chọn tất cả",
     ["easiest first - you can reach all of them, so this is purely what you want - applies in every mode"] = "ưu tiên nơi dễ nhất - bạn có thể đến mọi nơi, tùy bạn chọn - áp dụng mọi chế độ",
     ["easiest first — you can reach all of them, so this is purely what you want — applies in every mode"] = "ưu tiên nơi dễ nhất - bạn có thể đến mọi nơi, tùy bạn chọn - áp dụng mọi chế độ",
     ["an egg counts if it is one of these"] = "trứng hợp lệ nếu thuộc một trong các loại này",
@@ -173,39 +246,6 @@ local fullTransTable = {
     ["Forest"] = "Rừng xanh", ["Lake"] = "Hồ nước", ["Desert"] = "Sa mạc",
     ["Jungle"] = "Rừng rậm", ["Snow"] = "Vùng tuyết", ["Volcano"] = "Núi lửa",
     ["Abyss Ocean"] = "Vực biển sâu", ["Prehistoric"] = "Tiền sử",
-    ["Meadow"] = "Đồng cỏ", ["Winter"] = "Mùa đông", ["Coral Reef"] = "Rạn san hô",
-    ["Mines"] = "Hầm mỏ", ["Underworld"] = "Địa ngục", ["Atlantis"] = "Atlantis", ["Space"] = "Vũ trụ",
-
-    -- Đột biến (Mutations)
-    ["Normal"] = "Bình thường", ["Golden"] = "Vàng", ["Rainbow"] = "Cầu vồng",
-    ["Silver"] = "Bạc", ["Diamond"] = "Kim cương", ["Shiny"] = "Lấp lánh",
-    ["Infested"] = "Nhiễm bệnh", ["Corrupted"] = "Hư hỏng", ["Ghost"] = "Bóng ma",
-    ["Radioactive"] = "Phóng xạ", ["Oversized"] = "Khổng lồ", ["Tiny"] = "Tí hon",
-
-    -- Tab Máy chủ (Server)
-    ["Auto Hop"] = "Tự động đổi server", ["Hop now"] = "Đổi server ngay", ["Hop"] = "Đổi ngay",
-    ["How hard to look"] = "Độ sâu tìm server", ["Skip full servers"] = "Bỏ qua server đầy",
-    ["Reload hub after hopping"] = "Nạp lại hub sau khi đổi", ["Fewest players"] = "Ít người nhất",
-    ["Most players"] = "Đông người nhất", ["Rejoin"] = "Vào lại server",
-    ["Hop after a while anyway"] = "Đổi server sau một khoảng thời gian",
-    ["leave for another server straight away"] = "chuyển sang server khác ngay lập tức",
-    ["a full server will just bounce you straight back out"] = "server đầy sẽ khiến bạn bị văng ra ngoài",
-
-    -- Tab Tính năng phụ (Misc)
-    ["Flight"] = "Bay lượn", ["Toggle flight"] = "Bật / tắt bay", ["Fly Speed"] = "Tốc độ bay",
-    ["WalkSpeed"] = "Tốc độ chạy", ["JumpPower"] = "Lực nhảy", ["Infinite Jump"] = "Nhảy vô hạn",
-    ["Noclip"] = "Đi xuyên tường", ["Anti AFK"] = "Chống treo máy (Anti-AFK)",
-    ["FPS Boost"] = "Tối ưu FPS", ["No Rendering"] = "Tắt dựng hình",
-    ["Disable 3D Rendering"] = "Tắt dựng hình 3D", ["Remove Textures"] = "Xóa vân bề mặt",
-    ["Fullbright"] = "Làm sáng ban đêm", ["Player ESP"] = "Hiện vị trí người chơi",
-    ["Egg ESP"] = "Hiện vị trí trứng", ["Tracers"] = "Đường chỉ dẫn", ["Boxes"] = "Khung hộp",
-
-    -- Tab Webhook
-    ["Webhook URL"] = "Đường dẫn Webhook", ["Test Webhook"] = "Thử gửi Webhook",
-    ["Send on Steal"] = "Gửi khi trộm xong", ["Send on Hatch"] = "Gửi khi trứng nở",
-    ["Send on Rare Egg"] = "Gửi khi thấy trứng hiếm", ["Send on Monster Chest"] = "Gửi khi nhận rương",
-    ["Ping Everyone"] = "Tag @everyone", ["Ping Here"] = "Tag @here", ["No Ping"] = "Không tag",
-    ["Custom Message"] = "Tin nhắn tùy chỉnh",
 
     -- Tab Cài đặt (Settings)
     ["Import settings"] = "Nhập cài đặt", ["Import"] = "Nhập",
@@ -213,13 +253,12 @@ local fullTransTable = {
     ["Export settings"] = "Xuất cài đặt", ["UI scale"] = "Tỷ lệ giao diện",
     ["Theme"] = "Màu giao diện", ["Open / close the hub"] = "Mở / đóng hub",
     ["Start minimised"] = "Thu nhỏ khi chạy", ["Search settings..."] = "Tìm kiếm cài đặt...",
-    ["Copy"] = "Sao chép", ["Save Config"] = "Lưu cấu hình", ["Load Config"] = "Tải cấu hình",
+    ["Copy"] = "Sao chép",
 
-    -- Bảng độ hiếm (Rarities)
+    -- Độ hiếm (Rarities)
     ["Common"] = "Thường", ["Uncommon"] = "Không phổ biến", ["Rare"] = "Hiếm",
     ["Epic"] = "Sử thi", ["Legendary"] = "Huyền thoại", ["Mythic"] = "Thần thoại",
-    ["Cosmic"] = "Vũ trụ", ["Secret"] = "Bí mật", ["Eternal"] = "Vĩnh hằng",
-    ["Divine"] = "Thần thánh", ["Celestial"] = "Thiên thể", ["Prismatic"] = "Lăng kính"
+    ["Cosmic"] = "Vũ trụ", ["Secret"] = "Bí mật", ["Eternal"] = "Vĩnh hằng", ["Divine"] = "Thần thánh"
 }
 
 local sortedKeys = {}
@@ -234,7 +273,7 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 6. Module Hook Toggle gốc (Nhận diện dứt khoát trạng thái BẬT/TẮT theo vị trí thực)
+-- 6. Hook trực tiếp Toggle gốc theo vị trí thực tế
 local function hookToggleElement(track)
     if track:GetAttribute("ToggleHooked") then return end
 
@@ -288,11 +327,10 @@ local function hookToggleElement(track)
     end)
 end
 
--- 7. Áp dụng phong cách đồ họa sáng sủa & tối ưu độ sắc nét font chữ
+-- 7. Nâng cấp đồ họa sáng sủa & tối ưu độ sắc nét font chữ
 local function applyModernVisuals(obj)
     if obj:GetAttribute("IsLangToggle") then return end
 
-    -- 7.1. Tự động nhận diện công tắc trượt
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
         if sz.X >= 26 and sz.X <= 65 and sz.Y >= 14 and sz.Y <= 32 and sz.X > (sz.Y * 1.2) then
@@ -304,7 +342,6 @@ local function applyModernVisuals(obj)
     if obj:GetAttribute("RestyledModern") then return end
     obj:SetAttribute("RestyledModern", true)
 
-    -- 7.2. Nâng cấp Panel & Khung chứa
     if obj:IsA("Frame") then
         if obj.BackgroundTransparency < 0.9 then
             if obj.AbsoluteSize.X >= 280 and obj.AbsoluteSize.Y >= 180 then
@@ -329,7 +366,6 @@ local function applyModernVisuals(obj)
             end
         end
 
-    -- 7.3. Tối ưu màu chữ hiển thị (Tiêu đề trắng tinh, mô tả bạc sáng)
     elseif obj:IsA("TextLabel") then
         if obj.TextSize >= 13 then
             obj.Font = THEME.FontBold
@@ -339,7 +375,6 @@ local function applyModernVisuals(obj)
             obj.TextColor3 = THEME.TextSub
         end
 
-    -- 7.4. Nút bấm thông thường
     elseif obj:IsA("TextButton") or obj:IsA("ImageButton") then
         if obj:IsA("TextButton") then
             obj.Font = THEME.FontBold
@@ -371,7 +406,7 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 8. Vòng lặp điều phối chính: Dịch tĩnh, Dịch bộ đếm động, Nút gạt ngôn ngữ
+-- 8. Điều phối vòng lặp chính
 task.spawn(function()
     local searchReplaced = false
 
@@ -399,7 +434,7 @@ task.spawn(function()
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
-                            -- 8.1. Xử lý văn bản
+                            -- 8.1. Dịch văn bản
                             if desc:IsA("TextLabel") or desc:IsA("TextButton") then
                                 local txt = desc.Text
 
@@ -416,8 +451,10 @@ task.spawn(function()
                                 else
                                     if not desc:GetAttribute("IsLangToggle") and not isPureMetric(txt) then
                                         local low = txt:lower()
-                                        -- Xử lý dòng đếm thống kê thời gian thực mà không lưu cache tĩnh
-                                        if low:find("placed") or low:find("hatched") or low:find("banked") or low:find("lost") or low:find("re%-grabs") or low:find("idle") then
+                                        -- Xử lý chuỗi động
+                                        if low:find("placed") or low:find("hatched") or low:find("banked") or low:find("lost") 
+                                           or low:find("re%-grabs") or low:find("idle") or low:find("training") or low:find("quietened") 
+                                           or (low:find("pages") and low:find("server")) then
                                             if getgenv().RonneiTranslateVN then
                                                 desc.Text = translateDynamicCounters(txt)
                                             end
@@ -464,7 +501,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 8.2. Thay thế Avatar bản quyền
+                        -- 8.2. Avatar
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
@@ -479,7 +516,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 8.3. Thanh bật/tắt ngôn ngữ Tiếng Việt & English
+                        -- 8.3. Module nút gạt ngôn ngữ
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
