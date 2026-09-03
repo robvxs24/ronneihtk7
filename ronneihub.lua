@@ -1,5 +1,5 @@
 -- ==============================================================================
---  RONNEI HUB - PURGED FLOATING BLACK FRAME + REAL-TIME BEST PET + FULL VN
+--  RONNEI HUB - 100% RESTORED + REAL-TIME BEST PET + CLEAN SCREEN + FULL VN
 -- ==============================================================================
 local TS = game:GetService("TweenService")
 local CG = (gethui and gethui()) or game:GetService("CoreGui")
@@ -8,6 +8,7 @@ local NEW_NAME = "Ronnei Hub"
 local NEW_IMAGE = "rbxassetid://125111940452696"
 getgenv().RonneiTranslateVN = false
 
+-- 1. BẢNG MÀU TƯƠNG PHẢN CAO
 local THEME = {
     BG       = Color3.fromRGB(28, 31, 42),
     Sec      = Color3.fromRGB(38, 42, 56),
@@ -25,42 +26,16 @@ local THEME = {
 }
 
 local mountedPetCard = nil
+local ronneiRootGui = nil
+
 local function isInsidePet(o)
     return mountedPetCard and (o == mountedPetCard or o:IsDescendantOf(mountedPetCard))
 end
 
--- 1. BỘ DIỆT TẬN GỐC KHUNG ĐEN VIỀN XANH VÀ RÁC LENNON HUB
-local function killLennonFrame(obj)
-    if isInsidePet(obj) then return end
-    if obj:IsA("GuiObject") then
-        -- Nhận diện khung nền đen viền xanh trôi nổi của Lennon
-        local stroke = obj:FindFirstChildOfClass("UIStroke")
-        local isGreenBorder = stroke and stroke.Color.G > 0.6 and stroke.Color.R < 0.4
-        local isFloatingBox = obj.AbsoluteSize.X >= 180 and obj.AbsoluteSize.Y >= 120 and obj.BackgroundTransparency < 0.5
-
-        local t = (obj:IsA("TextLabel") or obj:IsA("TextButton")) and obj.Text:upper() or ""
-        local n = obj.Name:lower()
-
-        if isGreenBorder or (isFloatingBox and not obj:FindFirstChild("RonneiLangModule", true)) or t:find("LENNON") or t:find("TOP 4") or t:find("RESET GUI") or t:find("TELEPORT") or n:find("logo") then
-            obj.Visible = false
-            obj.Position = UDim2.new(20, 0, 20, 0)
-            pcall(function() obj.Size = UDim2.new(0, 0, 0, 0) end)
-        end
-    end
+local function isRonnei(o)
+    if not ronneiRootGui then return false end
+    return o == ronneiRootGui or o:IsDescendantOf(ronneiRootGui)
 end
-
-local function hookLennonSuppression(container)
-    container.ChildAdded:Connect(function(child)
-        if child:IsA("ScreenGui") and child.Name ~= "RonneiHub" and not child:FindFirstChild("RonneiLangModule", true) then
-            child.DescendantAdded:Connect(killLennonFrame)
-            for _, d in ipairs(child:GetDescendants()) do killLennonFrame(d) end
-        end
-    end)
-end
-
-hookLennonSuppression(CG)
-if LP and LP:FindFirstChild("PlayerGui") then hookLennonSuppression(LP.PlayerGui) end
-if gethui then hookLennonSuppression(gethui()) end
 
 -- 2. KHỞI CHẠY SCRIPT GỐC VÀ LENNON HUB
 task.spawn(function() pcall(function() loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9ee4edde227ac85f50872bf9e4226508.lua"))() end) end)
@@ -219,7 +194,7 @@ local function hookToggle(track)
     knob:GetPropertyChangedSignal("Position"):Connect(updateVisual)
 end
 
--- 5. THIẾT LẬP VIEWPORT VÀ CAMERA PET
+-- 5. CĂN CHỈNH CAMERA CHO PET THỜI GIAN THỰC
 local function setupPetViewport(vf)
     vf.BackgroundTransparency = 1
     vf.Ambient = Color3.fromRGB(220, 220, 220)
@@ -244,7 +219,7 @@ local function setupPetViewport(vf)
     vf.ChildAdded:Connect(function() task.defer(alignCamera) end)
 end
 
--- 6. TÌM THẺ BEST PET CHUẨN XÁC
+-- 6. TÌM THẺ BEST PET GỐC CỦA LENNON
 local function findOriginalBestPetCard()
     if mountedPetCard and mountedPetCard.Parent then return mountedPetCard end
     local list = {CG}
@@ -253,7 +228,7 @@ local function findOriginalBestPetCard()
 
     for _, cont in ipairs(list) do
         for _, gui in ipairs(cont:GetChildren()) do
-            if gui:IsA("ScreenGui") and gui.Name ~= "RonneiHub" and not gui:FindFirstChild("RonneiLangModule", true) then
+            if gui:IsA("ScreenGui") and gui ~= ronneiRootGui and not gui:FindFirstChild("RonneiLangModule", true) then
                 for _, d in ipairs(gui:GetDescendants()) do
                     if d:IsA("TextLabel") and d.Text:upper() == "BEST EGG" then
                         local c = d.Parent
@@ -281,7 +256,53 @@ local function findOriginalBestPetCard()
     return nil
 end
 
--- 7. LÀM ĐẸP GIAO DIỆN
+-- 7. DIỆT CHÍNH XÁC KHUNG ĐEN VIỀN XANH CỦA LENNON (KHÔNG ĐỤNG VÀO RONNEI HUB)
+local function purgeLennonJunk()
+    local list = {CG}
+    if LP and LP:FindFirstChild("PlayerGui") then table.insert(list, LP.PlayerGui) end
+    if gethui then table.insert(list, gethui()) end
+
+    for _, cont in ipairs(list) do
+        for _, gui in ipairs(cont:GetChildren()) do
+            -- Chỉ quét các ScreenGui bên ngoài, không đụng vào Ronnei Hub
+            if gui:IsA("ScreenGui") and gui ~= ronneiRootGui and not gui:FindFirstChild("RonneiLangModule", true) then
+                local isLennonGui = false
+                for _, d in ipairs(gui:GetDescendants()) do
+                    if d:IsA("TextLabel") and (d.Text:find("LENNON") or d.Text:find("TOP 4 SYSTEM") or d.Text:find("TELEPORT") or d.Text:find("Reset GUI")) then
+                        isLennonGui = true
+                        break
+                    end
+                end
+
+                if isLennonGui then
+                    -- Ẩn sạch các khung ngoài trừ thẻ Pet đã được ghim
+                    for _, child in ipairs(gui:GetChildren()) do
+                        if not isInsidePet(child) then
+                            child.Visible = false
+                        end
+                    end
+                    for _, desc in ipairs(gui:GetDescendants()) do
+                        if desc:IsA("GuiObject") and not isInsidePet(desc) then
+                            local t = (desc:IsA("TextLabel") or desc:IsA("TextButton")) and desc.Text:upper() or ""
+                            local n = desc.Name:lower()
+                            if t:find("TOP 4") or t:find("LENNON") or t:find("RESET GUI") or t:find("TELEPORT") or n:find("logo") or n:find("button") then
+                                desc.Visible = false
+                            end
+                            -- Xóa triệt để khung đen viền xanh
+                            local strk = desc:FindFirstChildOfClass("UIStroke")
+                            if strk and strk.Color.G > 0.6 and strk.Color.R < 0.4 and desc.AbsoluteSize.X > 150 then
+                                desc.Visible = false
+                                desc.Position = UDim2.new(10, 0, 10, 0)
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- 8. LÀM ĐẸP GIAO DIỆN (MIỄN NHIỄM 100% CHO THẺ PET)
 local function applyVisuals(o)
     if o:GetAttribute("IsLangToggle") or isInsidePet(o) then return end
     if (o:IsA("Frame") or o:IsA("GuiButton")) and not o:GetAttribute("ToggleHooked") then
@@ -310,7 +331,7 @@ local function applyVisuals(o)
     end
 end
 
--- 8. VÒNG LẶP ĐIỀU PHỐI CHÍNH
+-- 9. VÒNG LẶP ĐIỀU PHỐI CHÍNH
 task.spawn(function()
     local searchDone = false
     local petCardMounted = false
@@ -321,145 +342,159 @@ task.spawn(function()
             if LP and LP:FindFirstChild("PlayerGui") then table.insert(list, LP.PlayerGui) end
             if gethui then table.insert(list, gethui()) end
 
-            -- Quét cưỡng chế dọn sạch mọi khung đen/xanh của Lennon còn sót
-            for _, cont in ipairs(list) do
-                for _, g in ipairs(cont:GetChildren()) do
-                    if g:IsA("ScreenGui") and g.Name ~= "RonneiHub" and not g:FindFirstChild("RonneiLangModule", true) then
-                        for _, d in ipairs(g:GetDescendants()) do killLennonFrame(d) end
-                    end
-                end
-            end
-
+            -- 9.1. Nhận diện và cố định ScreenGui của Ronnei Hub
             for _, cont in ipairs(list) do
                 for _, child in ipairs(cont:GetChildren()) do
-                    local isHub = false
                     pcall(function()
                         for _, d in ipairs(child:GetDescendants()) do
-                            if d:IsA("TextLabel") and (d.Text:find("BK's Hub") or d.Text:find("Steal An Egg") or d.Text:find(NEW_NAME)) then isHub = true break end
+                            if d:IsA("TextLabel") and (d.Text:find("BK's Hub") or d.Text:find("Steal An Egg") or d.Text:find(NEW_NAME)) then
+                                ronneiRootGui = child
+                                break
+                            end
                         end
                     end)
+                    if ronneiRootGui then break end
+                end
+                if ronneiRootGui then break end
+            end
 
-                    if isHub then
-                        local card = findOriginalBestPetCard()
+            -- Dọn sạch khung Lennon ngoài màn hình
+            pcall(purgeLennonJunk)
 
-                        for _, desc in ipairs(child:GetDescendants()) do
-                            pcall(applyVisuals, desc)
+            if ronneiRootGui then
+                local card = findOriginalBestPetCard()
 
-                            -- Ghim thẻ Best Pet vào đúng Tab Trộm Trứng
-                            if desc:IsA("TextLabel") and (desc.Text == "Tự động trộm" or desc.Text == "Auto Steal") and desc.AbsolutePosition.X > 160 and not isInsidePet(desc) then
-                                local row = desc
-                                while row.Parent and not row.Parent:IsA("ScreenGui") do
-                                    if row.Parent:FindFirstChildOfClass("UIListLayout") then break end
-                                    row = row.Parent
-                                end
-                                local p = row.Parent
-                                if p and card and (card.Parent ~= p or not petCardMounted) then
-                                    card.Parent = p
-                                    card.Visible = true
-                                    card.Active = false
-                                    card.Draggable = false
-                                    card.Size = UDim2.new(1, 0, 0, 56)
-                                    card.Position = UDim2.new(0, 0, 0, 0)
-                                    card.AnchorPoint = Vector2.new(0, 0)
-                                    card.BackgroundColor3 = THEME.Sec
+                for _, desc in ipairs(ronneiRootGui:GetDescendants()) do
+                    pcall(applyVisuals, desc)
 
-                                    for _, sub in ipairs(card:GetDescendants()) do
-                                        if sub:IsA("GuiButton") or (sub:IsA("TextLabel") and (sub.Text == "v" or sub.Text == "V" or sub.Text == "⌄" or sub.Text:find("▼"))) then
-                                            sub.Visible = false
-                                            if sub:IsA("GuiButton") then sub.Active = false end
-                                        end
-                                    end
+                    -- Ghim thẻ Best Pet vào ngay trên hàng Auto Steal
+                    if desc:IsA("TextLabel") and (desc.Text == "Tự động trộm" or desc.Text == "Auto Steal") and desc.AbsolutePosition.X > 160 and not isInsidePet(desc) then
+                        local row = desc
+                        while row.Parent and not row.Parent:IsA("ScreenGui") do
+                            if row.Parent:FindFirstChildOfClass("UIListLayout") then break end
+                            row = row.Parent
+                        end
+                        local p = row.Parent
+                        if p and card and (card.Parent ~= p or not petCardMounted) then
+                            card.Parent = p
+                            card.Visible = true
+                            card.Active = false
+                            card.Draggable = false
+                            card.Size = UDim2.new(1, 0, 0, 56)
+                            card.Position = UDim2.new(0, 0, 0, 0)
+                            card.AnchorPoint = Vector2.new(0, 0)
+                            card.BackgroundColor3 = THEME.Sec
 
-                                    local layout = p:FindFirstChildOfClass("UIListLayout")
-                                    if layout then
-                                        layout.SortOrder = Enum.SortOrder.LayoutOrder
-                                        card.LayoutOrder = 1
-                                        local ord = 2
-                                        for _, sib in ipairs(p:GetChildren()) do
-                                            if sib:IsA("GuiObject") and sib ~= card then
-                                                sib.LayoutOrder = ord
-                                                ord = ord + 1
-                                            end
-                                        end
-                                    end
-                                    petCardMounted = true
+                            -- Vô hiệu hóa nút bấm bung menu Top 4
+                            for _, sub in ipairs(card:GetDescendants()) do
+                                if sub:IsA("GuiButton") or (sub:IsA("TextLabel") and (sub.Text == "v" or sub.Text == "V" or sub.Text == "⌄" or sub.Text:find("▼"))) then
+                                    sub.Visible = false
+                                    if sub:IsA("GuiButton") then sub.Active = false end
                                 end
                             end
 
-                            -- Cập nhật Live & Dịch thuật
-                            if isInsidePet(desc) then
-                                if desc:IsA("TextLabel") and getgenv().RonneiTranslateVN then
-                                    local cur = desc.Text
-                                    if Dict[cur] then desc.Text = Dict[cur] end
-                                end
-                            else
-                                if desc:IsA("TextLabel") or desc:IsA("TextButton") then
-                                    local txt = desc.Text
-                                    if txt == "BK's Hub" or txt == "BKs Hub" then desc.Text = NEW_NAME
-                                    elseif txt:lower():find("discord") or txt:lower():find("bkshub") then desc.Text = ""; desc.Visible = false
-                                    elseif (txt == "B" or txt == "b") and desc.Parent and desc.Parent:IsA("GuiObject") and desc.Parent.AbsoluteSize.X <= 65 then desc.Visible = false
-                                    elseif not desc:GetAttribute("IsLangToggle") and not isPureMetric(txt) then
-                                        local l = txt:lower()
-                                        if l:find("placed") or l:find("hatched") or l:find("banked") or l:find("lost") or l:find("re%-grabs") or l:find("idle") or l:find("training") or l:find("quietened") or l:find("going for") or (l:find("pages") and l:find("server")) then
-                                            if getgenv().RonneiTranslateVN then desc.Text = translateDynamicCounters(txt) end
-                                        else
-                                            if not desc:GetAttribute("OrigText") and txt ~= "" then desc:SetAttribute("OrigText", txt) end
-                                            local orig = desc:GetAttribute("OrigText") or txt
-                                            if getgenv().RonneiTranslateVN then
-                                                if Dict[orig] then desc.Text = Dict[orig]
-                                                else
-                                                    local res = orig
-                                                    for _, k in ipairs(sortedKeys) do
-                                                        if res:find(k, 1, true) then
-                                                            local s, e = res:find(k, 1, true)
-                                                            res = res:sub(1, s - 1) .. Dict[k] .. res:sub(e + 1)
-                                                        end
-                                                    end
-                                                    desc.Text = res
-                                                end
-                                            else
-                                                if desc:GetAttribute("OrigText") then desc.Text = desc:GetAttribute("OrigText") end
-                                            end
-                                        end
+                            local layout = p:FindFirstChildOfClass("UIListLayout")
+                            if layout then
+                                layout.SortOrder = Enum.SortOrder.LayoutOrder
+                                card.LayoutOrder = 1
+                                local ord = 2
+                                for _, sib in ipairs(p:GetChildren()) do
+                                    if sib:IsA("GuiObject") and sib ~= card then
+                                        sib.LayoutOrder = ord
+                                        ord = ord + 1
                                     end
-                                elseif desc:IsA("TextBox") then
-                                    local pl = desc.PlaceholderText
-                                    if not desc:GetAttribute("OrigPl") and pl ~= "" then desc:SetAttribute("OrigPl", pl) end
-                                    local orig = desc:GetAttribute("OrigPl") or pl
-                                    desc.PlaceholderText = getgenv().RonneiTranslateVN and (Dict[orig] or orig) or (desc:GetAttribute("OrigPl") or pl)
                                 end
+                            end
+                            petCardMounted = true
+                        end
+                    end
+
+                    -- Cập nhật Live & Dịch thuật
+                    if isInsidePet(desc) then
+                        if desc:IsA("TextLabel") and getgenv().RonneiTranslateVN then
+                            local cur = desc.Text
+                            if Dict[cur] then desc.Text = Dict[cur] end
+                        end
+                    else
+                        if desc:IsA("TextLabel") or desc:IsA("TextButton") then
+                            local txt = desc.Text
+                            if txt == "BK's Hub" or txt == "BKs Hub" then desc.Text = NEW_NAME
+                            elseif txt:lower():find("discord") or txt:lower():find("bkshub") then desc.Text = ""; desc.Visible = false
+                            elseif (txt == "B" or txt == "b") and desc.Parent and desc.Parent:IsA("GuiObject") and desc.Parent.AbsoluteSize.X <= 65 then desc.Visible = false
+                            elseif not desc:GetAttribute("IsLangToggle") and not isPureMetric(txt) then
+                                local l = txt:lower()
+                                if l:find("placed") or l:find("hatched") or l:find("banked") or l:find("lost") or l:find("re%-grabs") or l:find("idle") or l:find("training") or l:find("quietened") or l:find("going for") or (l:find("pages") and l:find("server")) then
+                                    if getgenv().RonneiTranslateVN then desc.Text = translateDynamicCounters(txt) end
+                                else
+                                    if not desc:GetAttribute("OrigText") and txt ~= "" then desc:SetAttribute("OrigText", txt) end
+                                    local orig = desc:GetAttribute("OrigText") or txt
+                                    if getgenv().RonneiTranslateVN then
+                                        if Dict[orig] then desc.Text = Dict[orig]
+                                        else
+                                            local res = orig
+                                            for _, k in ipairs(sortedKeys) do
+                                                if res:find(k, 1, true) then
+                                                    local s, e = res:find(k, 1, true)
+                                                    res = res:sub(1, s - 1) .. Dict[k] .. res:sub(e + 1)
+                                                end
+                                            end
+                                            desc.Text = res
+                                        end
+                                    else
+                                        if desc:GetAttribute("OrigText") then desc.Text = desc:GetAttribute("OrigText") end
+                                    end
+                                end
+                            end
+                        elseif desc:IsA("TextBox") then
+                            local pl = desc.PlaceholderText
+                            if not desc:GetAttribute("OrigPl") and pl ~= "" then desc:SetAttribute("OrigPl", pl) end
+                            local orig = desc:GetAttribute("OrigPl") or pl
+                            desc.PlaceholderText = getgenv().RonneiTranslateVN and (Dict[orig] or orig) or (desc:GetAttribute("OrigPl") or pl)
+                        end
+                    end
+                end
+
+                -- Thay thế Avatar Header
+                for _, img in ipairs(ronneiRootGui:GetDescendants()) do
+                    if (img:IsA("ImageLabel") or img:IsA("ImageButton")) and not isInsidePet(img) then
+                        local sz = img.AbsoluteSize
+                        if sz.X >= 20 and sz.X <= 65 and math.abs(sz.X - sz.Y) <= 8 then
+                            local n = img.Name:lower()
+                            if not (n:find("check") or n:find("arrow") or n:find("close") or n:find("exit") or n:find("slider") or n:find("pet") or n:find("egg")) then
+                                local root = ronneiRootGui:FindFirstChildWhichIsA("Frame") or ronneiRootGui
+                                if (img.AbsolutePosition.Y - root.AbsolutePosition.Y) <= 65 and img.Image ~= NEW_IMAGE then img.Image = NEW_IMAGE end
                             end
                         end
+                    end
+                end
 
-                        -- Nút gạt ngôn ngữ
-                        local mainF
-                        for _, f in ipairs(child:GetDescendants()) do if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then mainF = f; break end end
-                        if mainF and not searchDone then
-                            for _, obj in ipairs(mainF:GetDescendants()) do
-                                if (obj:IsA("TextBox") and obj.PlaceholderText:find("Search settings")) or (obj:IsA("TextLabel") and obj.Text:find("Search settings")) then
-                                    local p = obj.Parent
-                                    if p and not p:FindFirstChild("RonneiLangModule") then
-                                        obj.Visible = false
-                                        for _, sib in ipairs(p:GetChildren()) do if sib:IsA("GuiObject") and sib ~= obj then sib.Visible = false end end
-                                        local mod = Instance.new("Frame", p); mod.Name, mod.Size, mod.BackgroundTransparency, mod.ZIndex = "RonneiLangModule", UDim2.new(1, 0, 1, 0), 1, 40
-                                        local lbl = Instance.new("TextLabel", mod); lbl.Size, lbl.Position, lbl.Text, lbl.Font, lbl.TextSize, lbl.TextColor3, lbl.TextXAlignment, lbl.BackgroundTransparency, lbl.ZIndex = UDim2.new(1, -55, 1, 0), UDim2.new(0, 12, 0, 0), "ON = Tiếng Việt | OFF = English", THEME.FontB, 11, THEME.TxtMain, Enum.TextXAlignment.Left, 1, 41
-                                        lbl:SetAttribute("IsLangToggle", true)
-                                        local btn = Instance.new("TextButton", mod); btn.Size, btn.Position, btn.AnchorPoint, btn.BackgroundColor3, btn.Text, btn.AutoButtonColor, btn.ZIndex = UDim2.new(0, 42, 0, 22), UDim2.new(1, -50, 0.5, 0), Vector2.new(0, 0.5), getgenv().RonneiTranslateVN and THEME.TG_On or THEME.TG_Off, "", false, 41
-                                        btn:SetAttribute("IsLangToggle", true); Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
-                                        local bs = Instance.new("UIStroke", btn); bs.Color, bs.Thickness = getgenv().RonneiTranslateVN and THEME.TG_Glow or THEME.Stroke, 1.2
-                                        local kn = Instance.new("Frame", btn); kn.Size, kn.Position, kn.AnchorPoint, kn.BackgroundColor3, kn.BorderSizePixel, kn.ZIndex = UDim2.new(0, 16, 0, 16), getgenv().RonneiTranslateVN and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0), Vector2.new(0, 0.5), getgenv().RonneiTranslateVN and THEME.KB_On or THEME.KB_Off, 0, 42
-                                        Instance.new("UICorner", kn).CornerRadius = UDim.new(1, 0)
-                                        btn.MouseButton1Click:Connect(function()
-                                            getgenv().RonneiTranslateVN = not getgenv().RonneiTranslateVN
-                                            local a = getgenv().RonneiTranslateVN
-                                            btn.BackgroundColor3 = a and THEME.TG_On or THEME.TG_Off
-                                            bs.Color = a and THEME.TG_Glow or THEME.Stroke
-                                            kn.BackgroundColor3 = a and THEME.KB_On or THEME.KB_Off
-                                            kn.Position = a and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
-                                        end)
-                                        searchDone = true
-                                    end
-                                end
+                -- Nút gạt chuyển ngôn ngữ
+                local mainF
+                for _, f in ipairs(ronneiRootGui:GetDescendants()) do if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then mainF = f; break end end
+                if mainF and not searchDone then
+                    for _, obj in ipairs(mainF:GetDescendants()) do
+                        if (obj:IsA("TextBox") and obj.PlaceholderText:find("Search settings")) or (obj:IsA("TextLabel") and obj.Text:find("Search settings")) then
+                            local p = obj.Parent
+                            if p and not p:FindFirstChild("RonneiLangModule") then
+                                obj.Visible = false
+                                for _, sib in ipairs(p:GetChildren()) do if sib:IsA("GuiObject") and sib ~= obj then sib.Visible = false end end
+                                local mod = Instance.new("Frame", p); mod.Name, mod.Size, mod.BackgroundTransparency, mod.ZIndex = "RonneiLangModule", UDim2.new(1, 0, 1, 0), 1, 40
+                                local lbl = Instance.new("TextLabel", mod); lbl.Size, lbl.Position, lbl.Text, lbl.Font, lbl.TextSize, lbl.TextColor3, lbl.TextXAlignment, lbl.BackgroundTransparency, lbl.ZIndex = UDim2.new(1, -55, 1, 0), UDim2.new(0, 12, 0, 0), "ON = Tiếng Việt | OFF = English", THEME.FontB, 11, THEME.TxtMain, Enum.TextXAlignment.Left, 1, 41
+                                lbl:SetAttribute("IsLangToggle", true)
+                                local btn = Instance.new("TextButton", mod); btn.Size, btn.Position, btn.AnchorPoint, btn.BackgroundColor3, btn.Text, btn.AutoButtonColor, btn.ZIndex = UDim2.new(0, 42, 0, 22), UDim2.new(1, -50, 0.5, 0), Vector2.new(0, 0.5), getgenv().RonneiTranslateVN and THEME.TG_On or THEME.TG_Off, "", false, 41
+                                btn:SetAttribute("IsLangToggle", true); Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+                                local bs = Instance.new("UIStroke", btn); bs.Color, bs.Thickness = getgenv().RonneiTranslateVN and THEME.TG_Glow or THEME.Stroke, 1.2
+                                local kn = Instance.new("Frame", btn); kn.Size, kn.Position, kn.AnchorPoint, kn.BackgroundColor3, kn.BorderSizePixel, kn.ZIndex = UDim2.new(0, 16, 0, 16), getgenv().RonneiTranslateVN and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0), Vector2.new(0, 0.5), getgenv().RonneiTranslateVN and THEME.KB_On or THEME.KB_Off, 0, 42
+                                Instance.new("UICorner", kn).CornerRadius = UDim.new(1, 0)
+                                btn.MouseButton1Click:Connect(function()
+                                    getgenv().RonneiTranslateVN = not getgenv().RonneiTranslateVN
+                                    local a = getgenv().RonneiTranslateVN
+                                    btn.BackgroundColor3 = a and THEME.TG_On or THEME.TG_Off
+                                    bs.Color = a and THEME.TG_Glow or THEME.Stroke
+                                    kn.BackgroundColor3 = a and THEME.KB_On or THEME.KB_Off
+                                    kn.Position = a and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+                                end)
+                                searchDone = true
                             end
                         end
                     end
