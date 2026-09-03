@@ -1,5 +1,5 @@
 -- ==============================================================================
---  RONNEI HUB - HIGH CONTRAST + AUTO TOGGLE HOOK + BRIGHT THEME + FULL VN
+--  RONNEI HUB - HIGH CONTRAST + AUTO TOGGLE HOOK + BRIGHT THEME + FULL VN V2
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -20,31 +20,35 @@ getgenv().RonneiTranslateVN = false
 
 -- 2. Cấu hình bảng màu sáng sủa, độ tương phản cao (High-Contrast Slate Theme)
 local THEME = {
-    Background = Color3.fromRGB(28, 31, 42),       -- Nền chính sáng hơn, có chiều sâu
-    Secondary  = Color3.fromRGB(38, 42, 56),       -- Khối container/item nổi bật rõ ràng
-    Accent     = Color3.fromRGB(0, 230, 120),      -- Xanh neon chủ đạo
-    Stroke     = Color3.fromRGB(75, 83, 110),      -- Viền khung sắc nét, rõ biên giới
+    Background    = Color3.fromRGB(28, 31, 42),       -- Nền chính sáng hơn, có chiều sâu
+    Secondary     = Color3.fromRGB(38, 42, 56),       -- Khối container/item nổi bật rõ ràng
+    Accent        = Color3.fromRGB(0, 230, 120),      -- Xanh neon chủ đạo
+    Stroke        = Color3.fromRGB(75, 83, 110),      -- Viền khung sắc nét, rõ biên giới
     
     -- Trạng thái Toggle dứt khoát
-    ToggleOn      = Color3.fromRGB(0, 230, 118),   -- BẬT: Xanh Emerald sáng rực rỡ
-    ToggleOnGlow  = Color3.fromRGB(100, 255, 180), -- Viền sáng bổ trợ khi Bật
-    ToggleOff     = Color3.fromRGB(46, 50, 66),    -- TẮT: Xám graphite gọn gàng
-    KnobOn        = Color3.fromRGB(255, 255, 255),  -- Trắng tinh khi Bật
-    KnobOff       = Color3.fromRGB(145, 152, 172), -- Xám bạc khi Tắt
+    ToggleOn      = Color3.fromRGB(0, 230, 118),      -- BẬT: Xanh Emerald sáng rực rỡ
+    ToggleOnGlow  = Color3.fromRGB(100, 255, 180),    -- Viền sáng bổ trợ khi Bật
+    ToggleOff     = Color3.fromRGB(46, 50, 66),       -- TẮT: Xám graphite gọn gàng
+    KnobOn        = Color3.fromRGB(255, 255, 255),     -- Nút gạt: Trắng tinh khi Bật
+    KnobOff       = Color3.fromRGB(145, 152, 172),    -- Nút gạt: Xám bạc khi Tắt
     
     -- Chữ hiển thị
-    TextMain   = Color3.fromRGB(255, 255, 255),    -- Trắng sáng 100% cho tiêu đề
-    TextSub    = Color3.fromRGB(195, 202, 220),    -- Bạc sáng rõ ràng cho mô tả
-    Font       = Enum.Font.GothamMedium,
-    FontBold   = Enum.Font.GothamBold
+    TextMain      = Color3.fromRGB(255, 255, 255),    -- Trắng sáng 100% cho tiêu đề
+    TextSub       = Color3.fromRGB(195, 202, 220),    -- Bạc sáng rõ ràng cho mô tả
+    Font          = Enum.Font.GothamMedium,
+    FontBold      = Enum.Font.GothamBold
 }
 
--- 3. Kiểm tra giá trị động (tránh dịch đè làm lỗi hiển thị số liệu)
+-- 3. Kiểm tra giá trị động (tránh dịch đè làm đóng băng số liệu / bộ đếm thời gian)
 local function isDynamicValue(txt)
     if not txt or txt == "" then return true end
     local low = txt:lower()
     
+    -- Tránh ghi đè FPS, Ping và các bộ đếm thống kê nhặt trứng trong game
     if low:find("fps") or low:find("ms") or low:find("ping") then return true end
+    if low:find("banked") or low:find("hatched") or low:find("placed") or low:find("re%-grabs") then return true end
+    if low:find("idle") and (low:find("%d") or low:find("·")) then return true end
+    
     if txt:match("^%s*[%$]?%d+[%d%.]*%s*[a-zA-Z%%/%$]*%s*$") then return true end
     if txt:match("%d+%s*studs/s") or txt:match("%d+%%") or txt:match("%d+%s*pages") then return true end
     if txt:match("%d+m%s*%d+s") or txt:match("%d+:%d+") then return true end
@@ -52,7 +56,7 @@ local function isDynamicValue(txt)
     return false
 end
 
--- 4. Từ điển dịch tiếng Việt
+-- 4. Từ điển dịch tiếng Việt đầy đủ toàn bộ tính năng
 local fullTransTable = {
     -- Sidebar / Tabs
     ["Monster"] = "Quái vật", ["Auto Steal"] = "Tự động trộm", ["Filters"] = "Bộ lọc",
@@ -71,7 +75,29 @@ local fullTransTable = {
     ["GLOBAL FEED"] = "BẢNG TIN TOÀN CẦU", ["WHAT TO SEND"] = "LOẠI DỮ LIỆU GỬI",
     ["HOW MUCH NOISE"] = "MỨC ĐỘ THÔNG BÁO", ["THE MESSAGE"] = "NỘI DUNG TIN NHẮN", ["WINDOW"] = "CỬA SỔ",
 
-    -- Các câu mô tả chức năng
+    -- Tab Khu đất (Plot) - Trứng & Thú cưng (Eggs & Pets)
+    ["Auto Place Eggs"] = "Tự động đặt trứng",
+    ["Never place this rarity or rarer"] = "Không đặt từ độ hiếm này trở lên",
+    ["keeps your best eggs in the bag instead of committing them to a hatch timer"] = "giữ trứng xịn nhất trong túi thay vì đưa vào thời gian đếm ấp",
+    ["place everything"] = "Đặt tất cả",
+    ["Only place eggs worth ($/s)"] = "Chỉ đặt trứng có giá trị ($/s)",
+    ["the pen has limited room, so it fills with your best eggs first · blank for any"] = "chuồng có chỗ giới hạn, ưu tiên đặt trứng ngon nhất · để trống để chọn mọi quả",
+    ["the pen has limited room, so it fills with your best eggs first - blank for any"] = "chuồng có chỗ giới hạn, ưu tiên đặt trứng ngon nhất · để trống để chọn mọi quả",
+    ["Auto Hatch"] = "Tự động ấp nở",
+    ["hatches every egg the moment its timer is up"] = "tự mở tất cả trứng ngay khi hết thời gian ấp",
+    ["Auto Equip Best Pets"] = "Tự trang bị pet xịn nhất",
+    ["keeps your best pets out at all times — hatch something better and it swaps, even when your pen is full"] = "luôn dùng pet mạnh nhất — mở ra con tốt hơn sẽ tự thay thế kể cả khi chuồng đầy",
+    ["keeps your best pets out at all times - hatch something better and it swaps, even when your pen is full"] = "luôn dùng pet mạnh nhất — mở ra con tốt hơn sẽ tự thay thế kể cả khi chuồng đầy",
+
+    -- Tab Khu đất (Plot) - Nâng cấp (Upgrades) & Luyện tập
+    ["Auto Upgrade Trails"] = "Tự nâng cấp vệt sáng (Trails)",
+    ["Auto Upgrade Speed"] = "Tự nâng cấp tốc độ",
+    ["Auto Upgrade Carry"] = "Tự nâng cấp sức vác",
+    ["Auto Upgrade Capacity"] = "Tự nâng cấp sức chứa",
+    ["Auto Treadmill"] = "Tự chạy máy chạy bộ",
+    ["Auto Train"] = "Tự động luyện tập",
+
+    -- Tab Auto Steal (Trộm trứng)
     ["your Filters tab decides what counts, then takes the most valuable one that does"] = "tab Bộ lọc quyết định điều kiện, sau đó lấy quả giá trị nhất khớp lọc",
     ["IN PLAY: all areas · no other limits"] = "ĐANG CHẠY: tất cả khu vực · không giới hạn khác",
     ["IN PLAY: all areas - no other limits"] = "ĐANG CHẠY: tất cả khu vực · không giới hạn khác",
@@ -93,7 +119,7 @@ local fullTransTable = {
     ["Bypassed Speed"] = "Vượt tốc độ tối đa",
     ["Bypassed speed cap"] = "Vượt tốc độ tối đa cap",
 
-    -- Tab Quái vật
+    -- Tab Quái vật (Monster)
     ["Feed him one"] = "Cho quái ăn 1 quả", ["Feed"] = "Cho ăn",
     ["Claim the chest"] = "Nhận rương quái", ["Claim"] = "Nhận rương",
     ["Belly"] = "Bụng quái vật", ["Refresh"] = "Làm mới",
@@ -109,7 +135,7 @@ local fullTransTable = {
     ["turn this off and ur fuel gets planted or sold behind ur back"] = "tắt đi sẽ khiến trứng bị đặt hoặc bán mất",
     ["feeding destroys the egg, so it always picks ur least valuable one"] = "cho ăn sẽ làm mất trứng, luôn chọn quả rẻ nhất",
 
-    -- Tab Bộ lọc
+    -- Tab Bộ lọc (Filters)
     ["Matching right now"] = "Đang khớp điều kiện",
     ["Use rarity filter"] = "Lọc theo độ hiếm", ["Use mutation filter"] = "Lọc theo đột biến",
     ["Minimum weight (Kg)"] = "Trọng lượng tối thiểu (Kg)", ["Clear all"] = "Bỏ chọn tất cả",
@@ -120,7 +146,7 @@ local fullTransTable = {
     ["Jungle"] = "Rừng rậm", ["Snow"] = "Vùng tuyết", ["Volcano"] = "Núi lửa",
     ["Abyss Ocean"] = "Vực biển sâu", ["Prehistoric"] = "Tiền sử",
 
-    -- Tab Máy chủ
+    -- Tab Máy chủ (Server)
     ["Auto Hop"] = "Tự động đổi server", ["Hop now"] = "Đổi server ngay", ["Hop"] = "Đổi ngay",
     ["How hard to look"] = "Độ sâu tìm server", ["Skip full servers"] = "Bỏ qua server đầy",
     ["Reload hub after hopping"] = "Nạp lại hub sau khi đổi", ["Fewest players"] = "Ít người nhất",
@@ -129,15 +155,17 @@ local fullTransTable = {
     ["leave for another server straight away"] = "chuyển sang server khác ngay lập tức",
     ["a full server will just bounce you straight back out"] = "server đầy sẽ khiến bạn bị văng ra ngoài",
 
-    -- Tab Cài đặt
+    -- Tab Cài đặt & Tiện ích (Settings & Misc)
     ["Import settings"] = "Nhập cài đặt", ["Import"] = "Nhập",
     ["Reset position & size"] = "Đặt lại vị trí & cỡ", ["Reset"] = "Đặt lại",
     ["Export settings"] = "Xuất cài đặt", ["UI scale"] = "Tỷ lệ giao diện",
     ["Theme"] = "Màu giao diện", ["Open / close the hub"] = "Mở / đóng hub",
     ["Toggle flight"] = "Bật / tắt bay", ["Start minimised"] = "Thu nhỏ khi chạy",
     ["Search settings..."] = "Tìm kiếm cài đặt...", ["Copy"] = "Sao chép",
+    ["Noclip"] = "Đi xuyên tường", ["Infinite Jump"] = "Nhảy vô hạn",
+    ["Anti AFK"] = "Chống treo máy", ["FPS Boost"] = "Tối ưu FPS",
 
-    -- Độ hiếm
+    -- Bảng độ hiếm (Rarities)
     ["Common"] = "Thường", ["Uncommon"] = "Không phổ biến", ["Rare"] = "Hiếm",
     ["Epic"] = "Sử thi", ["Legendary"] = "Huyền thoại", ["Mythic"] = "Thần thoại",
     ["Cosmic"] = "Vũ trụ", ["Secret"] = "Bí mật", ["Eternal"] = "Vĩnh hằng", ["Divine"] = "Thần thánh"
@@ -155,16 +183,18 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 5. Module can thiệp Toggle gốc (Ép hiển thị BẬT/TẮT siêu tương phản)
+-- 5. Module Hook Toggle gốc (Nhận diện chính xác theo vị trí thực trên màn hình)
 local function hookToggleElement(track)
     if track:GetAttribute("ToggleHooked") then return end
 
-    -- Tìm con trượt (Knob hình tròn) bên trong Track
     local knob = nil
     for _, child in ipairs(track:GetChildren()) do
-        if child:IsA("GuiObject") and math.abs(child.AbsoluteSize.X - child.AbsoluteSize.Y) <= 10 and child.AbsoluteSize.X >= 8 and child.AbsoluteSize.X < track.AbsoluteSize.X then
-            knob = child
-            break
+        if child:IsA("GuiObject") and child.Name ~= "ToggleStroke" and not child:IsA("UIStroke") and not child:IsA("UICorner") then
+            local sz = child.AbsoluteSize
+            if math.abs(sz.X - sz.Y) <= 12 and sz.X >= 8 and sz.X < track.AbsoluteSize.X then
+                knob = child
+                break
+            end
         end
     end
 
@@ -185,22 +215,23 @@ local function hookToggleElement(track)
         if updating then return end
         updating = true
 
-        local trackWidth = track.AbsoluteSize.X
-        local knobX = knob.Position.X.Offset + (knob.Position.X.Scale * trackWidth)
-        -- Knob nằm quá 35% chiều rộng -> Trạng thái BẬT
-        local isOn = knobX > (trackWidth * 0.35) or knob.Position.X.Scale > 0.4
+        local trackW = track.AbsoluteSize.X
+        if trackW > 0 and knob then
+            -- Tính vị trí thực tế trên màn hình của con trượt so với thân công tắc
+            local relX = knob.AbsolutePosition.X - track.AbsolutePosition.X
+            local isOn = relX > (trackW * 0.28)
 
-        track.BackgroundColor3 = isOn and THEME.ToggleOn or THEME.ToggleOff
-        knob.BackgroundColor3 = isOn and THEME.KnobOn or THEME.KnobOff
-        stroke.Color = isOn and THEME.ToggleOnGlow or THEME.Stroke
-        stroke.Transparency = isOn and 0 or 0.2
+            track.BackgroundColor3 = isOn and THEME.ToggleOn or THEME.ToggleOff
+            knob.BackgroundColor3 = isOn and THEME.KnobOn or THEME.KnobOff
+            stroke.Color = isOn and THEME.ToggleOnGlow or THEME.Stroke
+            stroke.Transparency = isOn and 0 or 0.2
+        end
 
         updating = false
     end
 
     updateVisual()
 
-    -- Bắt sự kiện khi người dùng click bật/tắt để đổi màu ngay lập tức
     knob:GetPropertyChangedSignal("Position"):Connect(updateVisual)
     track:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
         if not updating then updateVisual() end
@@ -211,7 +242,7 @@ end
 local function applyModernVisuals(obj)
     if obj:GetAttribute("IsLangToggle") then return end
 
-    -- 6.1. Nhận diện nút gạt Toggle gốc (Kích thước chuẩn dạng viên thuốc)
+    -- 6.1. Tự động nhận diện công tắc trượt
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
         if sz.X >= 26 and sz.X <= 65 and sz.Y >= 14 and sz.Y <= 32 and sz.X > (sz.Y * 1.2) then
@@ -248,7 +279,7 @@ local function applyModernVisuals(obj)
             end
         end
 
-    -- 6.3. Tối ưu văn bản: Chữ lớn/Tiêu đề trắng tinh 100%, chú thích màu bạc sáng
+    -- 6.3. Tối ưu văn bản hiển thị
     elseif obj:IsA("TextLabel") then
         if obj.TextSize >= 13 then
             obj.Font = THEME.FontBold
@@ -258,7 +289,7 @@ local function applyModernVisuals(obj)
             obj.TextColor3 = THEME.TextSub
         end
 
-    -- 6.4. Nút bấm thông thường (Không phải Toggle)
+    -- 6.4. Nút bấm thông thường
     elseif obj:IsA("TextButton") or obj:IsA("ImageButton") then
         if obj:IsA("TextButton") then
             obj.Font = THEME.FontBold
@@ -290,7 +321,7 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 7. Bộ điều phối chính kết hợp Dịch thuật + Nút gạt ngôn ngữ
+-- 7. Vòng lặp điều phối chính: Dịch thuật + Nút gạt ngôn ngữ + Giữ kết nối giao diện
 task.spawn(function()
     local searchReplaced = false
 
@@ -318,7 +349,7 @@ task.spawn(function()
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
-                            -- 7.1. Xử lý dịch thuật
+                            -- 7.1. Xử lý dịch thuật nhãn chữ
                             if desc:IsA("TextLabel") or desc:IsA("TextButton") then
                                 local txt = desc.Text
 
@@ -375,7 +406,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 7.2. Thay thế Avatar
+                        -- 7.2. Thay thế Avatar bản quyền
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
@@ -390,7 +421,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 7.3. Tích hợp thanh chuyển đổi ngôn ngữ
+                        -- 7.3. Thanh bật/tắt ngôn ngữ Tiếng Việt & English
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
