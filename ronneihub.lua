@@ -1,15 +1,21 @@
 -- ==============================================================================
---  RONNEI HUB - 100% VIETNAMESE + DYNAMIC COUNTER TRANSLATOR + HIGH CONTRAST
+--  RONNEI HUB - INTEGRATED LENNON HUB TELEPORT + REMOVED OLD AUTO STEAL + FULL VN
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- 1. Khởi chạy script gốc từ Loader Luarmor
+-- 1. Khởi chạy đồng thời Script Gốc (Luarmor) và Lennon Hub (Teleport Steal)
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9ee4edde227ac85f50872bf9e4226508.lua"))()
+    end)
+end)
+
+task.spawn(function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/lennonxscripts/lennonhub/main/stealaegg.lua"))()
     end)
 end)
 
@@ -18,7 +24,7 @@ local NEW_IMAGE = "rbxassetid://125111940452696"
 
 getgenv().RonneiTranslateVN = false
 
--- 2. Bảng màu tương phản cao (High-Contrast Slate Theme)
+-- 2. Cấu hình bảng màu giao diện sáng sủa & tương phản cao
 local THEME = {
     Background    = Color3.fromRGB(28, 31, 42),
     Secondary     = Color3.fromRGB(38, 42, 56),
@@ -33,11 +39,12 @@ local THEME = {
     
     TextMain      = Color3.fromRGB(255, 255, 255),
     TextSub       = Color3.fromRGB(195, 202, 220),
+    TextHighlight = Color3.fromRGB(255, 75, 110),
     Font          = Enum.Font.GothamMedium,
     FontBold      = Enum.Font.GothamBold
 }
 
--- 3. Kiểm tra các giá trị đo lường thuần túy không được can thiệp
+-- 3. Bộ lọc tránh dịch đè các thông số đo lường
 local function isPureMetric(txt)
     if not txt or txt == "" then return true end
     local low = txt:lower()
@@ -48,37 +55,28 @@ local function isPureMetric(txt)
     return false
 end
 
--- 4. Bộ chuyển ngữ dòng thống kê / thông báo thời gian thực
+-- 4. Bộ chuyển ngữ dòng dữ liệu và trạng thái động
 local function translateDynamicCounters(txt)
     local res = txt
-    -- Thống kê trộm & ấp
     res = res:gsub("Idle", "Đang chờ"):gsub("idle", "đang chờ")
     res = res:gsub("Banked", "Đã cất"):gsub("banked", "đã cất")
     res = res:gsub("Lost", "Mất"):gsub("lost", "mất")
     res = res:gsub("Re%-grabs", "Nhặt lại"):gsub("re%-grabs", "nhặt lại")
     res = res:gsub("Placed", "Đã đặt"):gsub("placed", "đã đặt")
     res = res:gsub("Hatched", "Đã nở"):gsub("hatched", "đã nở")
-    
-    -- Trạng thái máy chạy bộ
     res = res:gsub("not training", "đang nghỉ"):gsub("earned", "kiếm được"):gsub("this session", "phiên này")
-    
-    -- Tối ưu hóa & Quét server
     res = res:gsub("quietened", "đã giảm tải"):gsub("effects", "hiệu ứng")
     res = res:gsub("(%d+)%s*pages", "%1 trang"):gsub("up to (%d+) servers", "quét tới %1 server")
-    
-    -- Popup thông báo nhặt trứng
     res = res:gsub("banked (.+) Egg", "Đã cất Trứng %1")
     return res
 end
 
--- 5. Từ điển dịch tiếng Việt đầy đủ 100%
+-- 5. Từ điển dịch tiếng Việt chuẩn xác toàn bộ hệ thống
 local fullTransTable = {
-    -- Sidebar / Tabs
     ["Monster"] = "Quái vật", ["Auto Steal"] = "Tự động trộm", ["Filters"] = "Bộ lọc",
     ["Plot"] = "Khu đất", ["Server"] = "Máy chủ", ["Misc"] = "Tính năng phụ",
     ["Webhook"] = "Webhook", ["Settings"] = "Cài đặt",
     
-    -- Headers & Section Titles
     ["EVENT"] = "SỰ KIỆN", ["STEALING"] = "TRỘM TRỨNG", ["YOUR STUFF"] = "ĐỒ CỦA BẠN",
     ["CONFIG"] = "CẤU HÌNH", ["SELLING"] = "BÁN VẬT PHẨM", ["TREADMILL TRAINING"] = "LUYỆN TẬP MÁY CHẠY",
     ["AUTOMATE IT"] = "TỰ ĐỘNG HÓA", ["TARGETING"] = "MỤC TIÊU", ["SPEED"] = "TỐC ĐỘ",
@@ -92,7 +90,7 @@ local fullTransTable = {
     ["EGGS ON THE MAP"] = "TRỨNG TRÊN BẢN ĐỒ", ["EGGS ON YOUR PLOT"] = "TRỨNG TRÊN ĐẤT CỦA BẠN",
     ["STATS PANEL"] = "BẢNG THỐNG KÊ",
 
-    -- Tab Khu đất (Plot) - Trứng, Ấp & Nâng cấp
+    -- Tab Khu đất
     ["Auto Place Eggs"] = "Tự động đặt trứng",
     ["Never place this rarity or rarer"] = "Không đặt từ độ hiếm này trở lên",
     ["keeps your best eggs in the bag instead of committing them to a hatch timer"] = "giữ trứng xịn nhất trong túi thay vì đưa vào thời gian đếm ấp",
@@ -107,7 +105,7 @@ local fullTransTable = {
     ["keeps your best pets out at all times - hatch something better and it swaps, even when your pen is full"] = "luôn dùng pet mạnh nhất — mở ra con tốt hơn sẽ tự thay thế kể cả khi chuồng đầy",
     ["Auto Upgrade Trails"] = "Tự nâng cấp vệt sáng (Trails)",
 
-    -- Tab Khu đất (Plot) - Bán (Selling) & Máy chạy (Treadmill)
+    -- Tab Bán & Luyện tập
     ["What selling will never touch"] = "Những thứ không bao giờ bị bán",
     ["favourited · equipped · in the fuse machine · in the pen · placed on your plot"] = "yêu thích · đang trang bị · trong máy ghép · trong chuồng · đặt trên đất",
     ["Sell anything earning under ($/s)"] = "Bán mọi thứ kiếm dưới ($/s)",
@@ -121,7 +119,7 @@ local fullTransTable = {
     ["Train when Tự động trộm is off"] = "Tập khi tắt Tự động trộm",
     ["on = trains whenever there is nothing worth stealing"] = "bật = tập luyện bất cứ khi nào không có gì đáng trộm",
 
-    -- Tab Máy chủ (Server)
+    -- Tab Máy chủ
     ["Auto Hop"] = "Tự động đổi server", ["Hop now"] = "Đổi server ngay", ["Hop"] = "Đổi ngay",
     ["How hard to look"] = "Độ sâu tìm server", ["Skip full servers"] = "Bỏ qua server đầy",
     ["Reload hub after hopping"] = "Nạp lại hub sau khi đổi",
@@ -130,25 +128,25 @@ local fullTransTable = {
     ["Hop after a while anyway"] = "Đổi server sau một khoảng thời gian",
     ["leave for another server straight away"] = "chuyển sang server khác ngay lập tức",
     ["a full server will just bounce you straight back out"] = "server đầy sẽ khiến bạn bị văng ra ngoài",
-    ["pages of the server list to collect, 100 servers each · Roblox rate limits this, so more pages takes longer"] = "số trang danh sách server cần quét, 100 server mỗi trang · Roblox giới hạn tốc độ, quét nhiều trang sẽ lâu hơn",
+    ["pages of the server list to collect, 100 servers each · Roblox rate limits this, so more pages takes longer"] = "số trang server cần quét, 100 server mỗi trang · Roblox giới hạn tốc độ, quét nhiều trang sẽ lâu hơn",
     ["skip servers emptier than this · blank for any"] = "bỏ qua server vắng hơn mức này · để trống để chọn mọi server",
-    ["skip servers busier than this · fewer players means less competition for the same eggs · blank for any"] = "bỏ qua server đông hơn mức này · ít người chơi hơn giúp giảm cạnh tranh trứng · để trống để chọn mọi server",
+    ["skip servers busier than this · fewer players means less competition for the same eggs · blank for any"] = "bỏ qua server đông hơn mức này · ít người chơi hơn giúp giảm cạnh tranh · để trống cho mọi server",
 
-    -- Tab Tính năng phụ (Misc) - ESP, Bay, Hiệu năng
+    -- Tab Tiện ích (Misc)
     ["Egg ESP"] = "ESP Trứng",
-    ["each egg's $/s, rarity, weight and mutations floating over it · no distance limit"] = "hiển thị $/s, độ hiếm, trọng lượng và đột biến nổi trên quả · không giới hạn cự ly",
+    ["each egg's $/s, rarity, weight and mutations floating over it · no distance limit"] = "hiển thị $/s, độ hiếm, trọng lượng và đột biến trên quả · không giới hạn cự ly",
     ["Show ESP on"] = "Hiển thị ESP cho",
     ["\"matching my filters\" tracks whatever Auto Steal is set to"] = "\"khớp bộ lọc\" theo dõi mục tiêu theo thiết lập Tự động trộm",
     ["\"matching my filters\" tracks whatever Tự động trộm is set to"] = "\"khớp bộ lọc\" theo dõi mục tiêu theo thiết lập Tự động trộm",
     ["Eggs matching..."] = "Trứng khớp bộ lọc...",
     ["Beam to current target"] = "Tia dẫn đường tới mục tiêu",
-    ["draws a line to the egg Auto Steal picked · easy to lose among fifty cards otherwise"] = "kẻ tia chỉ đường tới quả trứng đã chọn · tránh bị lạc giữa hàng tá quả trứng",
-    ["draws a line to the egg Tự động trộm picked · easy to lose among fifty cards otherwise"] = "kẻ tia chỉ đường tới quả trứng đã chọn · tránh bị lạc giữa hàng tá quả trứng",
+    ["draws a line to the egg Auto Steal picked · easy to lose among fifty cards otherwise"] = "kẻ tia chỉ đường tới quả trứng đã chọn · tránh bị lạc giữa hàng tá quả",
+    ["draws a line to the egg Tự động trộm picked · easy to lose among fifty cards otherwise"] = "kẻ tia chỉ đường tới quả trứng đã chọn · tránh bị lạc giữa hàng tá quả",
     ["Plot Egg ESP"] = "ESP Trứng trên đất",
     ["Khu đất Egg ESP"] = "ESP Trứng trên đất",
     ["your placed eggs: what each will pay, and the hatch timer · green when ready"] = "trứng đã đặt: thu nhập mỗi quả mang lại và thời gian ấp · màu xanh khi sẵn sàng nở",
     ["Show Stats Panel"] = "Hiện bảng thống kê",
-    ["small draggable panel: money income, eggs banked, best egg so far"] = "bảng kéo thả nhỏ gọn: thu nhập, số trứng đã cất, quả trứng xịn nhất",
+    ["small draggable panel: money income, eggs banked, best egg so far"] = "bảng kéo thả: thu nhập, số trứng đã cất, quả xịn nhất",
     ["WASD to fly, space up, Left Ctrl down · holds its altitude when you let go"] = "WASD để bay, Space bay lên, Ctrl trái hạ xuống · giữ nguyên độ cao khi thả phím",
     ["Flight speed"] = "Tốc độ bay",
     ["studs per second while flying"] = "studs mỗi giây khi đang bay",
@@ -166,11 +164,11 @@ local fullTransTable = {
 
     -- Tab Webhook
     ["Webhook URL"] = "Đường dẫn Webhook",
-    ["your channel -> Edit -> Integrations -> Webhooks -> Sao chép URL · sends a test message"] = "kênh của bạn -> Sửa kênh -> Tích hợp -> Webhooks -> Sao chép URL · gửi tin nhắn thử nghiệm",
-    ["your channel → Edit → Integrations → Webhooks → Sao chép URL · sends a test message"] = "kênh của bạn -> Sửa kênh -> Tích hợp -> Webhooks -> Sao chép URL · gửi tin nhắn thử nghiệm",
+    ["your channel -> Edit -> Integrations -> Webhooks -> Sao chép URL · sends a test message"] = "kênh của bạn -> Sửa kênh -> Tích hợp -> Webhooks -> Sao chép URL · gửi tin thử nghiệm",
+    ["your channel → Edit → Integrations → Webhooks → Sao chép URL · sends a test message"] = "kênh của bạn -> Sửa kênh -> Tích hợp -> Webhooks -> Sao chép URL · gửi tin thử nghiệm",
     ["Share my rare pulls"] = "Chia sẻ trứng hiếm nhặt được",
     ["What gets shared"] = "Dữ liệu được chia sẻ",
-    ["the exact list, so you never have to take our word for it"] = "danh sách dữ liệu chính xác, minh bạch hoàn toàn",
+    ["the exact list, so you never have to take our word for it"] = "danh sách dữ liệu chính xác, minh bạch",
     ["Show"] = "Xem", ["Preview"] = "Xem trước",
     ["Egg stolen"] = "Khi trộm được trứng",
     ["Egg hatched"] = "Khi trứng nở",
@@ -188,16 +186,16 @@ local fullTransTable = {
     ["a running total every so often, whatever else is switched on"] = "gửi bảng tổng kết định kỳ các thông số thu hoạch",
     ["Ping"] = "Tag nhắc tên",
     ["No ping"] = "Không tag",
-    ["@everyone only works if the webhook channel allows it"] = "@everyone chỉ hoạt động nếu quyền hạn kênh webhook cho phép",
+    ["@everyone only works if the webhook channel allows it"] = "@everyone chỉ hoạt động nếu quyền hạn kênh cho phép",
     ["Include my username"] = "Kèm tên tài khoản Roblox",
-    ["puts your Roblox name in the footer · off keeps every message anonymous"] = "hiện tên Roblox của bạn ở chân tin nhắn · tắt để ẩn danh hoàn toàn",
-    ["puts your Roblox name in the footer - off keeps every message anonymous"] = "hiện tên Roblox của bạn ở chân tin nhắn · tắt để ẩn danh hoàn toàn",
+    ["puts your Roblox name in the footer · off keeps every message anonymous"] = "hiện tên Roblox của bạn ở chân tin nhắn · tắt để ẩn danh",
+    ["puts your Roblox name in the footer - off keeps every message anonymous"] = "hiện tên Roblox của bạn ở chân tin nhắn · tắt để ẩn danh",
     ["Let exported configs carry the URL"] = "Cho phép xuất cấu hình kèm URL Webhook",
-    ["off (recommended) — then a config you share cannot give away your channel"] = "tắt (khuyến nghị) — giúp chia sẻ cấu hình mà không bị lộ webhook",
-    ["off (recommended) - then a config you share cannot give away your channel"] = "tắt (khuyến nghị) — giúp chia sẻ cấu hình mà không bị lộ webhook",
+    ["off (recommended) — then a config you share cannot give away your channel"] = "tắt (khuyên dùng) — tránh bị lộ liên kết webhook khi chia sẻ cài đặt",
+    ["off (recommended) - then a config you share cannot give away your channel"] = "tắt (khuyên dùng) — tránh bị lộ liên kết webhook khi chia sẻ cài đặt",
     ["Any"] = "Bất kỳ",
 
-    -- Tab Auto Steal (Trộm trứng)
+    -- Trộm & Quái vật & Cài đặt
     ["your Filters tab decides what counts, then takes the most valuable one that does"] = "tab Bộ lọc quyết định điều kiện, sau đó lấy quả giá trị nhất khớp lọc",
     ["IN PLAY: all areas · no other limits"] = "ĐANG CHẠY: tất cả khu vực · không giới hạn khác",
     ["IN PLAY: all areas - no other limits"] = "ĐANG CHẠY: tất cả khu vực · không giới hạn khác",
@@ -208,8 +206,6 @@ local fullTransTable = {
     ["move fast enough to reach every area, including the ones you are nowhere near unlocking"] = "di chuyển siêu tốc đến mọi khu vực, kể cả nơi chưa mở khóa",
     ["how fast you travel - very high values get you pulled back, so it eases down on its own"] = "tốc độ di chuyển — chỉnh quá cao sẽ bị giật lùi, script sẽ tự hãm lại",
     ["how fast you travel — very high values get you pulled back, so it eases down on its own"] = "tốc độ di chuyển — chỉnh quá cao sẽ bị giật lùi, script sẽ tự hãm lại",
-    ["If nothing matches, take the best anyway"] = "Nếu không khớp lọc, vẫn lấy quả tốt nhất",
-    ["when nothing fits your filters, take the most valuable egg out there instead of waiting"] = "khi không có trứng hợp bộ lọc, lấy quả đắt nhất thay vì chờ đợi",
     ["What to take"] = "Loại cần lấy",
     ["Best value"] = "Giá trị cao nhất",
     ["Rarity snipe"] = "Bắn tỉa độ hiếm",
@@ -218,8 +214,6 @@ local fullTransTable = {
     ["Gen ($/s) snipe floor"] = "Mức Gen ($/s) tối thiểu",
     ["Bypassed Speed"] = "Vượt tốc độ tối đa",
     ["Bypassed speed cap"] = "Vượt tốc độ tối đa cap",
-
-    -- Tab Quái vật (Monster)
     ["Feed him one"] = "Cho quái ăn 1 quả", ["Feed"] = "Cho ăn",
     ["Claim the chest"] = "Nhận rương quái", ["Claim"] = "Nhận rương",
     ["Belly"] = "Bụng quái vật", ["Refresh"] = "Làm mới",
@@ -234,20 +228,9 @@ local fullTransTable = {
     ["stops Auto-Place putting them on ur plot and Auto-Sell selling them"] = "chặn tự đặt lên đất và tự bán chúng",
     ["turn this off and ur fuel gets planted or sold behind ur back"] = "tắt đi sẽ khiến trứng bị đặt hoặc bán mất",
     ["feeding destroys the egg, so it always picks ur least valuable one"] = "cho ăn sẽ làm mất trứng, luôn chọn quả rẻ nhất",
-
-    -- Tab Bộ lọc (Filters)
     ["Matching right now"] = "Đang khớp điều kiện",
     ["Use rarity filter"] = "Lọc theo độ hiếm", ["Use mutation filter"] = "Lọc theo đột biến",
     ["Minimum weight (Kg)"] = "Trọng lượng tối thiểu (Kg)", ["Clear all"] = "Bỏ chọn tất cả",
-    ["easiest first - you can reach all of them, so this is purely what you want - applies in every mode"] = "ưu tiên nơi dễ nhất - bạn có thể đến mọi nơi, tùy bạn chọn - áp dụng mọi chế độ",
-    ["easiest first — you can reach all of them, so this is purely what you want — applies in every mode"] = "ưu tiên nơi dễ nhất - bạn có thể đến mọi nơi, tùy bạn chọn - áp dụng mọi chế độ",
-    ["an egg counts if it is one of these"] = "trứng hợp lệ nếu thuộc một trong các loại này",
-    ["an egg counts if it carries one of these"] = "trứng hợp lệ nếu mang một trong các đột biến này",
-    ["Forest"] = "Rừng xanh", ["Lake"] = "Hồ nước", ["Desert"] = "Sa mạc",
-    ["Jungle"] = "Rừng rậm", ["Snow"] = "Vùng tuyết", ["Volcano"] = "Núi lửa",
-    ["Abyss Ocean"] = "Vực biển sâu", ["Prehistoric"] = "Tiền sử",
-
-    -- Tab Cài đặt (Settings)
     ["Import settings"] = "Nhập cài đặt", ["Import"] = "Nhập",
     ["Reset position & size"] = "Đặt lại vị trí & cỡ", ["Reset"] = "Đặt lại",
     ["Export settings"] = "Xuất cài đặt", ["UI scale"] = "Tỷ lệ giao diện",
@@ -255,7 +238,10 @@ local fullTransTable = {
     ["Start minimised"] = "Thu nhỏ khi chạy", ["Search settings..."] = "Tìm kiếm cài đặt...",
     ["Copy"] = "Sao chép",
 
-    -- Độ hiếm (Rarities)
+    -- Map & Độ hiếm
+    ["Forest"] = "Rừng xanh", ["Lake"] = "Hồ nước", ["Desert"] = "Sa mạc",
+    ["Jungle"] = "Rừng rậm", ["Snow"] = "Vùng tuyết", ["Volcano"] = "Núi lửa",
+    ["Abyss Ocean"] = "Vực biển sâu", ["Prehistoric"] = "Tiền sử",
     ["Common"] = "Thường", ["Uncommon"] = "Không phổ biến", ["Rare"] = "Hiếm",
     ["Epic"] = "Sử thi", ["Legendary"] = "Huyền thoại", ["Mythic"] = "Thần thoại",
     ["Cosmic"] = "Vũ trụ", ["Secret"] = "Bí mật", ["Eternal"] = "Vĩnh hằng", ["Divine"] = "Thần thánh"
@@ -273,7 +259,7 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 6. Hook trực tiếp Toggle gốc theo vị trí thực tế
+-- 6. Hook trực tiếp Toggle theo vị trí thực tế
 local function hookToggleElement(track)
     if track:GetAttribute("ToggleHooked") then return end
 
@@ -327,10 +313,236 @@ local function hookToggleElement(track)
     end)
 end
 
--- 7. Nâng cấp đồ họa sáng sủa & tối ưu độ sắc nét font chữ
+-- 7. Bộ điều khiển đồng bộ Lennon Hub (Ẩn GUI trôi nổi và điều hướng logic)
+local lennonState = {
+    teleportEnabled = false,
+    bestEggName = "Đang quét...",
+    bestEggRarity = "...",
+    bestEggPrice = "$0"
+}
+
+-- Vòng lặp giám sát và ẩn GUI nổi của Lennon Hub, đồng thời lấy dữ liệu Best Egg
+task.spawn(function()
+    while true do
+        pcall(function()
+            local containers = {CoreGui}
+            if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
+                table.insert(containers, LocalPlayer.PlayerGui)
+            end
+            if gethui then table.insert(containers, gethui()) end
+
+            for _, cont in ipairs(containers) do
+                for _, g in ipairs(cont:GetChildren()) do
+                    if g:IsA("ScreenGui") and g.Name ~= "RonneiHub" then
+                        local hasLennon = false
+                        for _, d in ipairs(g:GetDescendants()) do
+                            if d:IsA("TextLabel") and (d.Text:find("BEST EGG") or d.Text:find("TELEPORT") or d.Text:find("ONE TELEPORT")) then
+                                hasLennon = true
+                                break
+                            end
+                        end
+
+                        if hasLennon then
+                            -- Thu thập thông số Best Egg từ Lennon Hub
+                            for _, d in ipairs(g:GetDescendants()) do
+                                if d:IsA("TextLabel") then
+                                    local t = d.Text
+                                    if t:find("%$") and (t:find("K") or t:find("M") or t:find("B")) then
+                                        lennonState.bestEggPrice = t
+                                    elseif t == "Mythic" or t == "Legendary" or t == "Divine" or t == "Secret" or t == "Cosmic" then
+                                        lennonState.bestEggRarity = t
+                                    elseif d.TextSize >= 15 and t ~= "BEST EGG" and t ~= "TELEPORT" and t ~= "ONE TELEPORT" and not t:find("%$") then
+                                        lennonState.bestEggName = t
+                                    end
+                                end
+                            end
+
+                            -- Tự động ẩn cửa sổ ngoài màn hình của Lennon Hub để tích hợp gọn vào menu Ronnei
+                            if g.Enabled then
+                                g.Enabled = false
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+        task.wait(0.5)
+    end
+end)
+
+-- Hàm kích hoạt nút Teleport của Lennon Hub
+local function triggerLennonTeleport(targetState)
+    lennonState.teleportEnabled = targetState
+
+    -- Nếu Lennon Hub dùng cờ biến toàn cục
+    if getgenv().Teleport ~= nil then getgenv().Teleport = targetState end
+    if getgenv().OneTeleport ~= nil then getgenv().OneTeleport = targetState end
+    if _G.Teleport ~= nil then _G.Teleport = targetState end
+
+    -- Bấm trực tiếp nút toggle trong giao diện Lennon
+    pcall(function()
+        local containers = {CoreGui}
+        if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
+            table.insert(containers, LocalPlayer.PlayerGui)
+        end
+        if gethui then table.insert(containers, gethui()) end
+
+        for _, cont in ipairs(containers) do
+            for _, g in ipairs(cont:GetChildren()) do
+                if g:IsA("ScreenGui") and g.Name ~= "RonneiHub" then
+                    for _, d in ipairs(g:GetDescendants()) do
+                        if d:IsA("TextButton") or d:IsA("ImageButton") then
+                            local p = d.Parent
+                            if p then
+                                for _, lbl in ipairs(p:GetDescendants()) do
+                                    if lbl:IsA("TextLabel") and (lbl.Text:find("TELEPORT") or lbl.Text:find("ONE TELEPORT")) then
+                                        d.MouseButton1Click:Fire()
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end
+
+-- 8. Tạo Widget Lennon Hub thay thế 2 tính năng cũ của Auto Steal
+local function buildLennonWidget(parentContainer)
+    if parentContainer:FindFirstChild("RonneiLennonModule") then return end
+
+    local card = Instance.new("Frame")
+    card.Name = "RonneiLennonModule"
+    card.Size = UDim2.new(1, 0, 0, 105)
+    card.BackgroundColor3 = THEME.Secondary
+    card.BorderSizePixel = 0
+    card.LayoutOrder = 1
+    card.Parent = parentContainer
+
+    local corner = Instance.new("UICorner", card)
+    corner.CornerRadius = UDim.new(0, 8)
+
+    local stroke = Instance.new("UIStroke", card)
+    stroke.Color = THEME.Stroke
+    stroke.Thickness = 1.2
+
+    -- Hàng 1: Best Egg Display
+    local eggIcon = Instance.new("TextLabel", card)
+    eggIcon.Size = UDim2.new(0, 36, 0, 36)
+    eggIcon.Position = UDim2.new(0, 10, 0, 8)
+    eggIcon.BackgroundColor3 = Color3.fromRGB(20, 22, 30)
+    eggIcon.Text = "🥚"
+    eggIcon.TextSize = 20
+    Instance.new("UICorner", eggIcon).CornerRadius = UDim.new(0, 6)
+
+    local eggTitle = Instance.new("TextLabel", card)
+    eggTitle.Name = "EggTitle"
+    eggTitle.Size = UDim2.new(1, -170, 0, 18)
+    eggTitle.Position = UDim2.new(0, 54, 0, 8)
+    eggTitle.BackgroundTransparency = 1
+    eggTitle.Font = THEME.FontBold
+    eggTitle.TextSize = 13
+    eggTitle.TextColor3 = THEME.TextMain
+    eggTitle.TextXAlignment = Enum.TextXAlignment.Left
+    eggTitle.Text = "TRỨNG NGON NHẤT"
+
+    local eggRarity = Instance.new("TextLabel", card)
+    eggRarity.Name = "EggRarity"
+    eggRarity.Size = UDim2.new(1, -170, 0, 16)
+    eggRarity.Position = UDim2.new(0, 54, 0, 26)
+    eggRarity.BackgroundTransparency = 1
+    eggRarity.Font = THEME.Font
+    eggRarity.TextSize = 11
+    eggRarity.TextColor3 = THEME.TextHighlight
+    eggRarity.TextXAlignment = Enum.TextXAlignment.Left
+    eggRarity.Text = "Đang tìm kiếm..."
+
+    local eggPrice = Instance.new("TextLabel", card)
+    eggPrice.Name = "EggPrice"
+    eggPrice.Size = UDim2.new(0, 100, 0, 36)
+    eggPrice.Position = UDim2.new(1, -112, 0, 8)
+    eggPrice.BackgroundTransparency = 1
+    eggPrice.Font = THEME.FontBold
+    eggPrice.TextSize = 14
+    eggPrice.TextColor3 = THEME.Accent
+    eggPrice.TextXAlignment = Enum.TextXAlignment.Right
+    eggPrice.Text = "$0/s"
+
+    local divider = Instance.new("Frame", card)
+    divider.Size = UDim2.new(1, -20, 0, 1)
+    divider.Position = UDim2.new(0, 10, 0, 50)
+    divider.BackgroundColor3 = THEME.Stroke
+    divider.BorderSizePixel = 0
+
+    -- Hàng 2: Toggle Dịch chuyển tức thì (Lennon Teleport)
+    local tpTitle = Instance.new("TextLabel", card)
+    tpTitle.Size = UDim2.new(1, -75, 0, 20)
+    tpTitle.Position = UDim2.new(0, 12, 0, 57)
+    tpTitle.BackgroundTransparency = 1
+    tpTitle.Font = THEME.FontBold
+    tpTitle.TextSize = 12
+    tpTitle.TextColor3 = THEME.TextMain
+    tpTitle.TextXAlignment = Enum.TextXAlignment.Left
+    tpTitle.Text = "Dịch chuyển trộm (Lennon Teleport)"
+
+    local tpSub = Instance.new("TextLabel", card)
+    tpSub.Size = UDim2.new(1, -75, 0, 16)
+    tpSub.Position = UDim2.new(0, 12, 0, 77)
+    tpSub.BackgroundTransparency = 1
+    tpSub.Font = THEME.Font
+    tpSub.TextSize = 10
+    tpSub.TextColor3 = THEME.TextSub
+    tpSub.TextXAlignment = Enum.TextXAlignment.Left
+    tpSub.Text = "Dịch chuyển tức thì đến quả trứng xịn nhất để lấy"
+
+    local sw = Instance.new("TextButton", card)
+    sw.Size = UDim2.new(0, 44, 0, 22)
+    sw.Position = UDim2.new(1, -56, 0, 64)
+    sw.BackgroundColor3 = THEME.ToggleOff
+    sw.Text = ""
+    sw.AutoButtonColor = false
+
+    local swStroke = Instance.new("UIStroke", sw)
+    swStroke.Color = THEME.Stroke
+    swStroke.Thickness = 1.2
+    Instance.new("UICorner", sw).CornerRadius = UDim.new(1, 0)
+
+    local knob = Instance.new("Frame", sw)
+    knob.Size = UDim2.new(0, 16, 0, 16)
+    knob.Position = UDim2.new(0, 3, 0.5, 0)
+    knob.AnchorPoint = Vector2.new(0, 0.5)
+    knob.BackgroundColor3 = THEME.KnobOff
+    knob.BorderSizePixel = 0
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    sw.MouseButton1Click:Connect(function()
+        lennonState.teleportEnabled = not lennonState.teleportEnabled
+        local active = lennonState.teleportEnabled
+        sw.BackgroundColor3 = active and THEME.ToggleOn or THEME.ToggleOff
+        swStroke.Color = active and THEME.ToggleOnGlow or THEME.Stroke
+        knob.BackgroundColor3 = active and THEME.KnobOn or THEME.KnobOff
+        knob.Position = active and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+        triggerLennonTeleport(active)
+    end)
+
+    -- Cập nhật dữ liệu hiển thị định kỳ
+    task.spawn(function()
+        while card and card.Parent do
+            eggTitle.Text = lennonState.bestEggName ~= "" and lennonState.bestEggName or "TRỨNG NGON NHẤT"
+            eggRarity.Text = lennonState.bestEggRarity
+            eggPrice.Text = lennonState.bestEggPrice
+            task.wait(0.4)
+        end
+    end)
+end
+
+-- 9. Áp dụng phong cách sáng sủa & Ẩn 2 tính năng Auto Steal cũ
 local function applyModernVisuals(obj)
     if obj:GetAttribute("IsLangToggle") then return end
 
+    -- Tự động nhận diện công tắc trượt
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
         if sz.X >= 26 and sz.X <= 65 and sz.Y >= 14 and sz.Y <= 32 and sz.X > (sz.Y * 1.2) then
@@ -406,7 +618,7 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 8. Điều phối vòng lặp chính
+-- 10. Vòng lặp điều phối chính
 task.spawn(function()
     local searchReplaced = false
 
@@ -434,7 +646,32 @@ task.spawn(function()
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
-                            -- 8.1. Dịch văn bản
+                            -- 10.1. Xử lý triệt tiêu 2 tính năng cũ của Auto Steal và chèn Lennon Hub
+                            if desc:IsA("TextLabel") then
+                                local t = desc.Text:lower()
+                                -- Nhận diện dòng "Tự động trộm" (hoặc Auto Steal)
+                                if (t == "tự động trộm" or t == "auto steal") and desc.Parent and desc.Parent.Name ~= "Sidebar" then
+                                    local rowFrame = desc.Parent
+                                    if rowFrame:IsA("Frame") and rowFrame.AbsoluteSize.Y < 80 then
+                                        rowFrame.Visible = false
+                                        rowFrame.Size = UDim2.new(0, 0, 0, 0)
+                                        if rowFrame.Parent then
+                                            buildLennonWidget(rowFrame.Parent)
+                                        end
+                                    end
+                                end
+
+                                -- Nhận diện dòng "Nếu không khớp lọc, vẫn lấy quả..."
+                                if t:find("nếu không khớp lọc") or t:find("if nothing matches") then
+                                    local rowFrame = desc.Parent
+                                    if rowFrame:IsA("Frame") and rowFrame.AbsoluteSize.Y < 80 then
+                                        rowFrame.Visible = false
+                                        rowFrame.Size = UDim2.new(0, 0, 0, 0)
+                                    end
+                                end
+                            end
+
+                            -- 10.2. Dịch thuật toàn văn
                             if desc:IsA("TextLabel") or desc:IsA("TextButton") then
                                 local txt = desc.Text
 
@@ -451,7 +688,6 @@ task.spawn(function()
                                 else
                                     if not desc:GetAttribute("IsLangToggle") and not isPureMetric(txt) then
                                         local low = txt:lower()
-                                        -- Xử lý chuỗi động
                                         if low:find("placed") or low:find("hatched") or low:find("banked") or low:find("lost") 
                                            or low:find("re%-grabs") or low:find("idle") or low:find("training") or low:find("quietened") 
                                            or (low:find("pages") and low:find("server")) then
@@ -501,7 +737,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 8.2. Avatar
+                        -- 10.3. Thay thế Avatar bản quyền
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
@@ -516,7 +752,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 8.3. Module nút gạt ngôn ngữ
+                        -- 10.4. Thanh công tắc ngôn ngữ
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
