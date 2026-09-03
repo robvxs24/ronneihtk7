@@ -1,12 +1,12 @@
 -- ==============================================================================
---  RONNEI HUB - AUTO STEAL V1 & V2 SPLIT + LENNON HUB DOCKED + FULL VN 100%
+--  RONNEI HUB - LENNON HUB BEST PET INTEGRATION + SAFE PET RENDER + FULL VN
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- 1. Khởi chạy song song Script Gốc và Lennon Hub
+-- 1. Khởi chạy song song cả Script Gốc và Lennon Hub
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9ee4edde227ac85f50872bf9e4226508.lua"))()
@@ -24,7 +24,7 @@ local NEW_IMAGE = "rbxassetid://125111940452696"
 
 getgenv().RonneiTranslateVN = false
 
--- 2. Cấu hình bảng màu giao diện sáng sủa & tương phản cao
+-- 2. Bảng màu tương phản cao (High-Contrast Slate Theme)
 local THEME = {
     Background    = Color3.fromRGB(28, 31, 42),
     Secondary     = Color3.fromRGB(38, 42, 56),
@@ -54,7 +54,7 @@ local function isPureMetric(txt)
     return false
 end
 
--- 4. Bộ chuyển ngữ dòng dữ liệu và trạng thái động
+-- 4. Bộ chuyển ngữ dữ liệu và thống kê thời gian thực
 local function translateDynamicCounters(txt)
     local res = txt
     res = res:gsub("Idle", "Đang chờ"):gsub("idle", "đang chờ")
@@ -70,7 +70,7 @@ local function translateDynamicCounters(txt)
     return res
 end
 
--- 5. Từ điển dịch tiếng Việt chuẩn xác toàn bộ hệ thống
+-- 5. Từ điển dịch tiếng Việt chuẩn xác
 local fullTransTable = {
     ["Monster"] = "Quái vật", ["Auto Steal"] = "Tự động trộm", ["Filters"] = "Bộ lọc",
     ["Plot"] = "Khu đất", ["Server"] = "Máy chủ", ["Misc"] = "Tính năng phụ",
@@ -237,11 +237,6 @@ local fullTransTable = {
     ["Start minimised"] = "Thu nhỏ khi chạy", ["Search settings..."] = "Tìm kiếm cài đặt...",
     ["Copy"] = "Sao chép",
 
-    -- Từ khóa Lennon Hub
-    ["BEST EGG"] = "TRỨNG TỐT NHẤT",
-    ["TELEPORT"] = "DỊCH CHUYỂN TRỘM",
-    ["ONE TELEPORT"] = "DỊCH CHUYỂN TỨC THÌ",
-
     -- Map & Độ hiếm
     ["Forest"] = "Rừng xanh", ["Lake"] = "Hồ nước", ["Desert"] = "Sa mạc",
     ["Jungle"] = "Rừng rậm", ["Snow"] = "Vùng tuyết", ["Volcano"] = "Núi lửa",
@@ -263,9 +258,9 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 6. Hook trực tiếp Toggle theo vị trí thực tế trên màn hình
+-- 6. Hook trực tiếp Toggle theo vị trí thực tế
 local function hookToggleElement(track)
-    if track:GetAttribute("ToggleHooked") then return end
+    if track:GetAttribute("ToggleHooked") or track:GetAttribute("IsLennon") then return end
 
     local knob = nil
     for _, child in ipairs(track:GetChildren()) do
@@ -317,8 +312,22 @@ local function hookToggleElement(track)
     end)
 end
 
--- 7. Tìm kiếm ScreenGui độc lập của Lennon Hub (tránh quét nhầm Ronnei Hub)
-local function getLennonGui()
+-- 7. Tìm hàng chứa (Row Item) và khung cha (Section Container) trong Layout Ronnei Hub
+local function getTopRowItem(guiObj)
+    local current = guiObj
+    while current and current.Parent and not current.Parent:IsA("ScreenGui") do
+        local p = current.Parent
+        local list = p:FindFirstChildOfClass("UIListLayout")
+        if list and list.FillDirection == Enum.FillDirection.Vertical then
+            return current, p
+        end
+        current = p
+    end
+    return nil, nil
+end
+
+-- 8. Tìm thẻ BEST EGG từ Lennon Hub và bảo vệ hình ảnh Pet nguyên bản
+local function findLennonBestEggCard()
     local containers = {CoreGui}
     if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
         table.insert(containers, LocalPlayer.PlayerGui)
@@ -327,17 +336,32 @@ local function getLennonGui()
 
     for _, cont in ipairs(containers) do
         for _, g in ipairs(cont:GetChildren()) do
-            if g:IsA("ScreenGui") and not g:GetAttribute("IsRonneiHubMain") then
-                local hasBestEgg = false
+            if g:IsA("ScreenGui") and g.Name ~= "RonneiHub" then
                 for _, d in ipairs(g:GetDescendants()) do
-                    if d:IsA("TextLabel") and (d.Text:upper():find("BEST EGG") or d.Text:upper():find("ONE TELEPORT")) then
-                        hasBestEgg = true
-                        break
+                    if d:IsA("TextLabel") and d.Text:upper():find("BEST EGG") then
+                        local card = d
+                        -- Lùi dần lên tìm Frame thẻ chứa thông tin Pet
+                        while card.Parent and card.Parent ~= g and not card.Parent:IsA("ScreenGui") do
+                            local p = card.Parent
+                            if p:IsA("ScreenGui") or p.Name:lower():find("main") or p.Name:lower():find("holder") or p:FindFirstChildOfClass("UIListLayout") then
+                                break
+                            end
+                            card = p
+                        end
+
+                        if card and card:IsA("GuiObject") then
+                            -- Gắn nhãn bảo vệ để script không đè ảnh avatar hay đổi màu phá vỡ texture pet
+                            card:SetAttribute("IsLennon", true)
+                            card:SetAttribute("IsBestEggCard", true)
+                            for _, sub in ipairs(card:GetDescendants()) do
+                                sub:SetAttribute("IsLennon", true)
+                                if sub:IsA("ImageLabel") or sub:IsA("ViewportFrame") then
+                                    sub:SetAttribute("IsPetImage", true)
+                                end
+                            end
+                            return card
+                        end
                     end
-                end
-                if hasBestEgg then
-                    g:SetAttribute("IsLennonGui", true)
-                    return g
                 end
             end
         end
@@ -345,10 +369,11 @@ local function getLennonGui()
     return nil
 end
 
--- 8. Áp dụng phong cách sáng sủa cho toàn bộ đối tượng GUI
+-- 9. Nâng cấp đồ họa sáng sủa (Bỏ qua hoàn toàn các thành phần của Lennon Hub)
 local function applyModernVisuals(obj)
-    if obj:GetAttribute("IsLangToggle") then return end
+    if obj:GetAttribute("IsLangToggle") or obj:GetAttribute("IsLennon") then return end
 
+    -- Tự động nhận diện công tắc trượt
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
         if sz.X >= 26 and sz.X <= 65 and sz.Y >= 14 and sz.Y <= 32 and sz.X > (sz.Y * 1.2) then
@@ -424,9 +449,10 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 9. Vòng lặp điều phối chính: Phân tách Auto Steal V1 & V2 + Dịch thuật
+-- 10. Vòng lặp điều phối chính
 task.spawn(function()
     local searchReplaced = false
+    local lennonCardMounted = false
 
     while true do
         pcall(function()
@@ -449,101 +475,47 @@ task.spawn(function()
                     end)
 
                     if isHub then
-                        child:SetAttribute("IsRonneiHubMain", true)
+                        local bestEggCard = findLennonBestEggCard()
 
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
-                            -- 9.1. PHÂN TÁCH KHÔNG GIAN AUTO STEAL V1 & AUTO STEAL V2
-                            if desc:IsA("TextLabel") and (desc.Text == "AUTO STEAL" or desc.Text == "TRỘM TRỨNG") then
-                                -- Đổi tên Header V1
-                                desc.Text = "AUTO STEAL V1 (MẶC ĐỊNH - BAY LƯỢN)"
+                            -- 10.1. Nhúng Best Pet Card vào ngay TRÊN nút "Tự động trộm"
+                            if desc:IsA("TextLabel") and not lennonCardMounted then
+                                local t = desc.Text:lower()
+                                if (t == "tự động trộm" or t == "auto steal") and desc.Parent then
+                                    local rowItem, sectionContainer = getTopRowItem(desc)
+                                    if rowItem and sectionContainer and bestEggCard then
+                                        -- Di chuyển trực tiếp thẻ Best Egg vào khung
+                                        bestEggCard.Parent = sectionContainer
+                                        bestEggCard.Visible = true
+                                        bestEggCard.Active = false
+                                        bestEggCard.Draggable = false
+                                        bestEggCard.Position = UDim2.new(0, 0, 0, 0)
+                                        bestEggCard.AnchorPoint = Vector2.new(0, 0)
 
-                                local sectionContainer = desc.Parent
-                                if sectionContainer and (sectionContainer:IsA("ScrollingFrame") or sectionContainer:IsA("Frame")) then
-                                    -- Tìm hàng thứ 2 của V1 ("Nếu không khớp lọc...") để đặt V2 ngay phía dưới nó
-                                    local row2 = nil
-                                    for _, c in ipairs(sectionContainer:GetChildren()) do
-                                        if c:IsA("Frame") then
-                                            for _, lbl in ipairs(c:GetDescendants()) do
-                                                if lbl:IsA("TextLabel") and (lbl.Text:find("khớp lọc") or lbl.Text:find("matches")) then
-                                                    row2 = c
-                                                    break
-                                                end
-                                            end
-                                        end
-                                        if row2 then break end
-                                    end
+                                        -- Đảm bảo LayoutOrder nằm ngay trước nút Tự động trộm
+                                        local autoStealOrder = rowItem.LayoutOrder or 2
+                                        bestEggCard.LayoutOrder = autoStealOrder - 1
 
-                                    if row2 then
-                                        -- Đảm bảo cả 2 hàng V1 LUÔN LUÔN HIỂN THỊ ĐẦY ĐỦ
-                                        row2.Visible = true
-                                        if row2.Parent then
-                                            for _, sib in ipairs(row2.Parent:GetChildren()) do
-                                                if sib:IsA("Frame") then sib.Visible = true end
-                                            end
-                                        end
-
-                                        -- Tạo Header AUTO STEAL V2 nếu chưa có
-                                        local v2Header = sectionContainer:FindFirstChild("RonneiV2Header")
-                                        if not v2Header then
-                                            v2Header = Instance.new("TextLabel")
-                                            v2Header.Name = "RonneiV2Header"
-                                            v2Header.Size = UDim2.new(1, 0, 0, 24)
-                                            v2Header.BackgroundTransparency = 1
-                                            v2Header.Font = THEME.FontBold
-                                            v2Header.TextSize = 11
-                                            v2Header.TextColor3 = THEME.TextSub
-                                            v2Header.TextXAlignment = Enum.TextXAlignment.Left
-                                            v2Header.Text = "AUTO STEAL V2 (DỊCH CHUYỂN TỨC THÌ / TELEPORT)"
-                                            v2Header.LayoutOrder = row2.LayoutOrder + 1
-                                            v2Header.Parent = sectionContainer
+                                        -- Đồng bộ kích thước và viền ngoài
+                                        bestEggCard.Size = UDim2.new(1, 0, 0, bestEggCard.AbsoluteSize.Y > 30 and bestEggCard.AbsoluteSize.Y or 58)
+                                        bestEggCard.BackgroundColor3 = THEME.Secondary
+                                        
+                                        local strk = bestEggCard:FindFirstChildOfClass("UIStroke")
+                                        if not strk then
+                                            strk = Instance.new("UIStroke", bestEggCard)
+                                            strk.Thickness = 1.2
+                                            strk.Color = THEME.Stroke
                                         end
 
-                                        -- Tạo Khung chứa V2 (V2 Holder) để nhúng Lennon Hub
-                                        local v2Holder = sectionContainer:FindFirstChild("RonneiV2Holder")
-                                        if not v2Holder then
-                                            v2Holder = Instance.new("Frame")
-                                            v2Holder.Name = "RonneiV2Holder"
-                                            v2Holder.Size = UDim2.new(1, 0, 0, 0)
-                                            v2Holder.AutomaticSize = Enum.AutomaticSize.Y
-                                            v2Holder.BackgroundTransparency = 1
-                                            v2Holder.BorderSizePixel = 0
-                                            v2Holder.LayoutOrder = row2.LayoutOrder + 2
-                                            
-                                            local list = Instance.new("UIListLayout", v2Holder)
-                                            list.SortOrder = Enum.SortOrder.LayoutOrder
-                                            list.Padding = UDim.new(0, 6)
-                                            v2Holder.Parent = sectionContainer
-                                        end
-
-                                        -- Nhúng các thẻ của Lennon Hub vào V2 Holder (chỉ di chuyển duy nhất 1 lần)
-                                        local lennonGui = getLennonGui()
-                                        if lennonGui and v2Holder and not v2Holder:GetAttribute("LennonDocked") then
-                                            for _, obj in ipairs(lennonGui:GetChildren()) do
-                                                if obj:IsA("GuiObject") and obj.Visible then
-                                                    obj.Parent = v2Holder
-                                                    obj.Draggable = false
-                                                    obj.Active = false
-                                                    obj.Position = UDim2.new(0, 0, 0, 0)
-                                                    obj.Size = UDim2.new(1, 0, 0, obj.AbsoluteSize.Y > 0 and obj.AbsoluteSize.Y or 60)
-                                                    
-                                                    if obj:IsA("Frame") then
-                                                        obj.BackgroundColor3 = THEME.Secondary
-                                                        local strk = obj:FindFirstChildOfClass("UIStroke") or Instance.new("UIStroke", obj)
-                                                        strk.Thickness = 1.2
-                                                        strk.Color = THEME.Stroke
-                                                    end
-                                                end
-                                            end
-                                            v2Holder:SetAttribute("LennonDocked", true)
-                                        end
+                                        lennonCardMounted = true
                                     end
                                 end
                             end
 
-                            -- 9.2. DỊCH THUẬT TOÀN BỘ VĂN BẢN
-                            if desc:IsA("TextLabel") or desc:IsA("TextButton") then
+                            -- 10.2. Dịch thuật (Bỏ qua thành phần của Lennon Hub để giữ nguyên tính toàn vẹn)
+                            if (desc:IsA("TextLabel") or desc:IsA("TextButton")) and not desc:GetAttribute("IsLennon") then
                                 local txt = desc.Text
 
                                 if txt == "BK's Hub" or txt == "BKs Hub" then
@@ -592,7 +564,7 @@ task.spawn(function()
                                         end
                                     end
                                 end
-                            elseif desc:IsA("TextBox") then
+                            elseif desc:IsA("TextBox") and not desc:GetAttribute("IsLennon") then
                                 local pl = desc.PlaceholderText
                                 if not desc:GetAttribute("OrigPlaceholder") and pl ~= "" then
                                     desc:SetAttribute("OrigPlaceholder", pl)
@@ -608,22 +580,28 @@ task.spawn(function()
                             end
                         end
 
-                        -- 9.3. Thay thế Avatar bản quyền
+                        -- 10.3. Thay thế Avatar bản quyền (Chỉ thay ở Header, tuyệt đối KHÔNG đụng vào hình ảnh của Pet)
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
-                                local sz = img.AbsoluteSize
-                                if sz.X >= 20 and sz.X <= 65 and math.abs(sz.X - sz.Y) <= 8 then
-                                    local name = img.Name:lower()
-                                    if not (name:find("check") or name:find("arrow") or name:find("close") or name:find("exit") or name:find("slider")) then
-                                        if img.Image ~= NEW_IMAGE then
-                                            img.Image = NEW_IMAGE
+                                -- Bỏ qua hoàn toàn nếu là ảnh của thú cưng hoặc nằm trong Lennon Hub
+                                if not img:GetAttribute("IsPetImage") and not img:GetAttribute("IsLennon") and not img:FindFirstAncestor("IsBestEggCard") then
+                                    local sz = img.AbsoluteSize
+                                    if sz.X >= 20 and sz.X <= 65 and math.abs(sz.X - sz.Y) <= 8 then
+                                        local name = img.Name:lower()
+                                        if not (name:find("check") or name:find("arrow") or name:find("close") or name:find("exit") or name:find("slider") or name:find("pet") or name:find("egg")) then
+                                            -- Chỉ thay thế avatar nằm ở khu vực Header góc trên bên trái
+                                            local rootFrame = child:FindFirstChildWhichIsA("Frame") or child
+                                            local relY = img.AbsolutePosition.Y - rootFrame.AbsolutePosition.Y
+                                            if relY >= 0 and relY <= 65 and img.Image ~= NEW_IMAGE then
+                                                img.Image = NEW_IMAGE
+                                            end
                                         end
                                     end
                                 end
                             end
                         end
 
-                        -- 9.4. Thanh công tắc ngôn ngữ Tiếng Việt & English
+                        -- 10.4. Thanh công tắc ngôn ngữ Tiếng Việt & English
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
