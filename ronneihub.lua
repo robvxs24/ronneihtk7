@@ -1,6 +1,10 @@
 -- ==============================================================================
---    RONNEI HUB - FIXED REVERT BUG (SLIDERS/INPUTS) + FULL VN + 2X AVATAR FIX
+--    RONNEI HUB - FIXED REVERT BUG + FULL VN + 2X AVATAR FIX + MODERN UI UPGRADE
 -- ==============================================================================
+
+local TweenService = game:GetService("TweenService")
+local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
+local LocalPlayer = game:GetService("Players").LocalPlayer
 
 -- 1. Khởi chạy script gốc từ Loader Luarmor
 task.spawn(function()
@@ -11,22 +15,29 @@ end)
 
 local NEW_NAME = "Ronnei Hub"
 local NEW_IMAGE = "rbxassetid://125111940452696"
-local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
-local LocalPlayer = game:GetService("Players").LocalPlayer
 
 getgenv().RonneiTranslateVN = false
 
--- 2. Kiểm tra giá trị động (Tuyệt đối KHÔNG can thiệp để không bị lỗi phục hồi số)
+-- 2. Cấu hình bảng màu & Giao diện nâng cấp (Dark Sleek Theme)
+local THEME = {
+    Background = Color3.fromRGB(18, 20, 26),
+    Secondary  = Color3.fromRGB(25, 28, 36),
+    Accent     = Color3.fromRGB(0, 190, 120),
+    TextMain   = Color3.fromRGB(245, 247, 250),
+    Stroke     = Color3.fromRGB(50, 54, 66),
+    Font       = Enum.Font.GothamMedium,
+    FontBold   = Enum.Font.GothamBold
+}
+
+-- 3. Kiểm tra giá trị động (Không can thiệp để tránh xung đột dữ liệu)
 local function isDynamicValue(txt)
     if not txt or txt == "" then return true end
     local low = txt:lower()
     
-    -- FPS / MS / Ping
     if low:find("fps") or low:find("ms") or low:find("ping") then
         return true
     end
     
-    -- Giá trị thanh trượt / số studs/s / % / pages / tiền tệ
     if txt:match("^%s*[%$]?%d+[%d%.]*%s*[a-zA-Z%%/%$]*%s*$") then return true end
     if txt:match("%d+%s*studs/s") or txt:match("%d+%%") or txt:match("%d+%s*pages") then return true end
     if txt:match("%d+m%s*%d+s") or txt:match("%d+:%d+") then return true end
@@ -34,7 +45,7 @@ local function isDynamicValue(txt)
     return false
 end
 
--- 3. Từ điển dịch tiếng Việt chuẩn xác (Bao gồm đầy đủ các câu mô tả dài trong video)
+-- 4. Từ điển dịch tiếng Việt chuẩn xác
 local fullTransTable = {
     -- Sidebar / Tabs
     ["Monster"] = "Quái vật", ["Auto Steal"] = "Tự động trộm", ["Filters"] = "Bộ lọc",
@@ -53,17 +64,14 @@ local fullTransTable = {
     ["GLOBAL FEED"] = "BẢNG TIN TOÀN CẦU", ["WHAT TO SEND"] = "LOẠI DỮ LIỆU GỬI",
     ["HOW MUCH NOISE"] = "MỨC ĐỘ THÔNG BÁO", ["THE MESSAGE"] = "NỘI DUNG TIN NHẮN", ["WINDOW"] = "CỬA SỔ",
 
-    -- Các câu mô tả trong video (Auto Steal & Tốc độ)
+    -- Các câu mô tả chức năng
     ["your Filters tab decides what counts, then takes the most valuable one that does"] = "tab Bộ lọc quyết định điều kiện, sau đó lấy quả giá trị nhất khớp lọc",
-    ["your Bộ lọc tab decides what counts, then takes the most valuable one that does"] = "tab Bộ lọc quyết định điều kiện, sau đó lấy quả giá trị nhất khớp lọc",
     ["IN PLAY: all areas · no other limits"] = "ĐANG CHẠY: tất cả khu vực · không giới hạn khác",
     ["IN PLAY: all areas - no other limits"] = "ĐANG CHẠY: tất cả khu vực · không giới hạn khác",
     ["not used by this mode — switch to Rarity snipe to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa độ hiếm để dùng",
     ["not used by this mode - switch to Rarity snipe to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa độ hiếm để dùng",
-    ["not used by this mode - switch to Bắn tỉa độ hiếm to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa độ hiếm để dùng",
     ["not used by this mode — switch to Gen ($/s) snipe to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa Gen ($/s) để dùng",
     ["not used by this mode - switch to Gen ($/s) snipe to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa Gen ($/s) để dùng",
-    ["not used by this mode - switch to Bắn tỉa Gen ($/s) to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa Gen ($/s) để dùng",
     ["move fast enough to reach every area, including the ones you are nowhere near unlocking"] = "di chuyển siêu tốc đến mọi khu vực, kể cả nơi chưa mở khóa",
     ["how fast you travel - very high values get you pulled back, so it eases down on its own"] = "tốc độ di chuyển — chỉnh quá cao sẽ bị giật lùi, script sẽ tự hãm lại",
     ["how fast you travel — very high values get you pulled back, so it eases down on its own"] = "tốc độ di chuyển — chỉnh quá cao sẽ bị giật lùi, script sẽ tự hãm lại",
@@ -99,7 +107,6 @@ local fullTransTable = {
     ["Use rarity filter"] = "Lọc theo độ hiếm", ["Use mutation filter"] = "Lọc theo đột biến",
     ["Minimum weight (Kg)"] = "Trọng lượng tối thiểu (Kg)", ["Clear all"] = "Bỏ chọn tất cả",
     ["easiest first - you can reach all of them, so this is purely what you want - applies in every mode"] = "ưu tiên nơi dễ nhất - bạn có thể đến mọi nơi, tùy bạn chọn - áp dụng mọi chế độ",
-    ["easiest first — you can reach all of them, so this is purely what you want — applies in every mode"] = "ưu tiên nơi dễ nhất - bạn có thể đến mọi nơi, tùy bạn chọn - áp dụng mọi chế độ",
     ["an egg counts if it is one of these"] = "trứng hợp lệ nếu thuộc một trong các loại này",
     ["an egg counts if it carries one of these"] = "trứng hợp lệ nếu mang một trong các đột biến này",
     ["Forest"] = "Rừng xanh", ["Lake"] = "Hồ nước", ["Desert"] = "Sa mạc",
@@ -129,7 +136,6 @@ local fullTransTable = {
     ["Cosmic"] = "Vũ trụ", ["Secret"] = "Bí mật", ["Eternal"] = "Vĩnh hằng", ["Divine"] = "Thần thánh"
 }
 
--- Sắp xếp cụm từ từ dài đến ngắn
 local sortedKeys = {}
 for k in pairs(fullTransTable) do table.insert(sortedKeys, k) end
 table.sort(sortedKeys, function(a, b) return #a > #b end)
@@ -142,7 +148,76 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 4. Bộ điều phối giao diện chính
+-- 5. Hàm tiêm hiệu ứng đồ họa hiện đại (In-Place Restyling)
+local function applyModernVisuals(obj)
+    if obj:GetAttribute("RestyledModern") then return end
+    obj:SetAttribute("RestyledModern", true)
+
+    if obj:IsA("Frame") then
+        if obj.BackgroundTransparency < 0.9 then
+            if obj.AbsoluteSize.X >= 280 and obj.AbsoluteSize.Y >= 180 then
+                obj.BackgroundColor3 = THEME.Background
+            else
+                obj.BackgroundColor3 = THEME.Secondary
+            end
+
+            if not obj:FindFirstChildOfClass("UIStroke") and obj.AbsoluteSize.X > 20 then
+                local stroke = Instance.new("UIStroke")
+                stroke.Color = THEME.Stroke
+                stroke.Thickness = 1
+                stroke.Transparency = 0.6
+                stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+                stroke.Parent = obj
+            end
+
+            if not obj:FindFirstChildOfClass("UICorner") and obj.AbsoluteSize.X > 20 then
+                local corner = Instance.new("UICorner")
+                corner.CornerRadius = UDim.new(0, 6)
+                corner.Parent = obj
+            end
+        end
+
+    elseif obj:IsA("TextLabel") then
+        if not obj:GetAttribute("IsLangToggle") then
+            obj.Font = (obj.TextSize >= 14) and THEME.FontBold or THEME.Font
+            if obj.TextColor3.R < 0.3 and obj.TextColor3.G < 0.3 and obj.TextColor3.B < 0.3 then
+                obj.TextColor3 = THEME.TextMain
+            end
+        end
+
+    elseif obj:IsA("TextButton") or obj:IsA("ImageButton") then
+        if not obj:GetAttribute("IsLangToggle") then
+            if obj:IsA("TextButton") then
+                obj.Font = THEME.FontBold
+            end
+
+            if not obj:FindFirstChildOfClass("UICorner") and obj.AbsoluteSize.X > 15 then
+                local corner = Instance.new("UICorner")
+                corner.CornerRadius = UDim.new(0, 6)
+                corner.Parent = obj
+            end
+
+            local origColor = obj.BackgroundColor3
+            obj.MouseEnter:Connect(function()
+                if obj.BackgroundTransparency < 0.9 then
+                    TweenService:Create(obj, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+                        BackgroundColor3 = THEME.Accent
+                    }):Play()
+                end
+            end)
+
+            obj.MouseLeave:Connect(function()
+                if obj.BackgroundTransparency < 0.9 then
+                    TweenService:Create(obj, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+                        BackgroundColor3 = origColor
+                    }):Play()
+                end
+            end)
+        end
+    end
+end
+
+-- 6. Bộ điều phối chính kết hợp Dịch thuật + Skinning + Nút gạt
 task.spawn(function()
     local searchReplaced = false
 
@@ -167,26 +242,25 @@ task.spawn(function()
                     end)
 
                     if isHub then
-                        -- 4.1. Xử lý văn bản (KHÔNG ĐỤNG VÀO TEXTBOX.TEXT VÀ SLIDER SỐ)
+                        -- Tự động làm đẹp toàn bộ các đối tượng hiển thị
                         for _, desc in ipairs(child:GetDescendants()) do
-                            -- Chỉ xử lý TextLabel và TextButton (TextBox chỉ đổi Placeholder)
+                            pcall(applyModernVisuals, desc)
+
+                            -- 6.1. Xử lý bản dịch văn bản
                             if desc:IsA("TextLabel") or desc:IsA("TextButton") then
                                 local txt = desc.Text
 
                                 if txt == "BK's Hub" or txt == "BKs Hub" then
                                     desc.Text = NEW_NAME
-                                -- Xóa sạch link Discord trên thanh menu
                                 elseif txt:lower():find("discord") or txt:lower():find("bkshub") then
                                     desc.Text = ""
                                     desc.Visible = false
-                                -- Ẩn chữ B nếu nó là dạng TextLabel nằm trong vòng tròn avatar
                                 elseif txt == "B" or txt == "b" then
                                     local p = desc.Parent
                                     if p and p:IsA("GuiObject") and p.AbsoluteSize.X <= 65 then
                                         desc.Visible = false
                                     end
                                 else
-                                    -- Bỏ qua nút gạt ngôn ngữ và các giá trị động để chống lỗi phục hồi
                                     if not desc:GetAttribute("IsLangToggle") and not isDynamicValue(txt) then
                                         if not desc:GetAttribute("OriginalText") and txt ~= "" then
                                             desc:SetAttribute("OriginalText", txt)
@@ -214,7 +288,6 @@ task.spawn(function()
                                     end
                                 end
                             elseif desc:IsA("TextBox") then
-                                -- TUYỆT ĐỐI KHÔNG GÁN desc.Text (cho phép bạn gõ thoải mái)
                                 local pl = desc.PlaceholderText
                                 if not desc:GetAttribute("OrigPlaceholder") and pl ~= "" then
                                     desc:SetAttribute("OrigPlaceholder", pl)
@@ -230,7 +303,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 4.2. Thay Avatar chữ "B" (cả trên thanh Menu nổi và trong Menu chính)
+                        -- 6.2. Thay thế Avatar chữ B
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
@@ -245,7 +318,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 4.3. Thay thanh tìm kiếm bằng Nút gạt ngôn ngữ
+                        -- 6.3. Tích hợp nút gạt ngôn ngữ
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
@@ -284,7 +357,7 @@ task.spawn(function()
                                         langLabel.Name = "LangLabel"
                                         langLabel.Size = UDim2.new(1, -55, 1, 0)
                                         langLabel.Position = UDim2.new(0, 12, 0, 0)
-                                        langLabel.Text = "ON = Vietnamese | OFF = English"
+                                        langLabel.Text = "ON = Tiếng Việt | OFF = English"
                                         langLabel.Font = Enum.Font.GothamBold
                                         langLabel.TextSize = 10
                                         langLabel.TextColor3 = Color3.fromRGB(240, 245, 255)
@@ -329,6 +402,6 @@ task.spawn(function()
                 end
             end
         end)
-        task.wait(0.35)
+        task.wait(0.4)
     end
 end)
