@@ -1,13 +1,24 @@
 -- ============================================================================
---  RONNEI HUB - BEST PET TRACKER (CHỈ GIỮ BẢNG BESTPET)
---  PHIÊN BẢN: 5.0.0 (GHÉP VÀO TAB AUTO STEAL)
+--  RONNEI BEST PET - CHỈ THÊM BẢNG BESTPET VÀO AUTO STEAL
+--  KHÔNG LOAD LENNONHUB - HOẠT ĐỘNG ĐỘC LẬP
+--  GITHUB: https://github.com/yourusername/ronnei-bestpet
+-- ============================================================================
+--  CÁCH DÙNG: Chạy script này trong executor, nó sẽ tự tìm hub
+--  và thêm bảng BestPet vào tab Auto Steal
 -- ============================================================================
 
 local TweenService = game:GetService("TweenService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- ================== PHẦN 1: BẢNG MÀU ==================
+-- ================== CẤU HÌNH ==================
+local CONFIG = {
+    UPDATE_INTERVAL = 1.5,  -- Cập nhật mỗi 1.5 giây
+    MAX_RETRIES = 30,       -- Số lần thử tìm hub tối đa
+    RETRY_DELAY = 1         -- Thời gian chờ giữa các lần thử
+}
+
+-- ================== BẢNG MÀU ==================
 local THEME = {
     Background    = Color3.fromRGB(28, 31, 42),
     Secondary     = Color3.fromRGB(38, 42, 56),
@@ -21,7 +32,7 @@ local THEME = {
     FontBold      = Enum.Font.GothamBold
 }
 
--- Bảng màu theo độ hiếm
+-- ================== MÀU THEO ĐỘ HIẾM ==================
 local RARITY_COLORS = {
     ["Common"] = Color3.fromRGB(150, 150, 150),
     ["Uncommon"] = Color3.fromRGB(50, 200, 50),
@@ -35,13 +46,24 @@ local RARITY_COLORS = {
     ["Divine"] = Color3.fromRGB(255, 200, 100)
 }
 
--- ================== PHẦN 2: QUÉT PET TỪ GAME ==================
+-- ================== TRỌNG SỐ ĐỘ HIẾM ==================
+local RARITY_WEIGHT = {
+    ["Common"] = 1,
+    ["Uncommon"] = 2,
+    ["Rare"] = 3,
+    ["Epic"] = 4,
+    ["Legendary"] = 5,
+    ["Mythic"] = 6,
+    ["Cosmic"] = 7,
+    ["Secret"] = 8,
+    ["Eternal"] = 9,
+    ["Divine"] = 10
+}
+
+-- ================== QUÉT PET TỪ GAME ==================
 local function scanPets()
     local petData = {}
-    local Players = game:GetService("Players")
-    local LocalPlayer = Players.LocalPlayer
     
-    -- Quét các vị trí có thể chứa pet
     local targets = {
         LocalPlayer.leaderstats,
         LocalPlayer.PlayerGui,
@@ -58,7 +80,6 @@ local function scanPets()
                     local rarity = "Unknown"
                     local image = "rbxassetid://125111940452696"
                     
-                    -- Tìm rarity
                     for _, sub in pairs(child:GetChildren()) do
                         if sub.Name:find("Rarity") then
                             if sub:IsA("TextLabel") or sub:IsA("StringValue") then
@@ -69,7 +90,6 @@ local function scanPets()
                                 end
                             end
                         end
-                        -- Tìm ảnh
                         if sub:IsA("ImageLabel") and sub.Image ~= "" then
                             image = sub.Image
                         end
@@ -89,21 +109,7 @@ local function scanPets()
     return petData
 end
 
--- ================== PHẦN 3: RARITY WEIGHT ==================
-local RARITY_WEIGHT = {
-    ["Common"] = 1,
-    ["Uncommon"] = 2,
-    ["Rare"] = 3,
-    ["Epic"] = 4,
-    ["Legendary"] = 5,
-    ["Mythic"] = 6,
-    ["Cosmic"] = 7,
-    ["Secret"] = 8,
-    ["Eternal"] = 9,
-    ["Divine"] = 10
-}
-
--- ================== PHẦN 4: TÌM HUB CHÍNH ==================
+-- ================== TÌM HUB ==================
 local function findHub()
     local containers = {CoreGui}
     if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
@@ -112,10 +118,10 @@ local function findHub()
     if gethui then table.insert(containers, gethui()) end
     
     for _, container in ipairs(containers) do
-        for _, child in ipairs(container:GetChildren()) do
+        for _, child in pairs(container:GetChildren()) do
             local isHub = false
             pcall(function()
-                for _, d in ipairs(child:GetDescendants()) do
+                for _, d in pairs(child:GetDescendants()) do
                     if d:IsA("TextLabel") and (d.Text:find("BK's Hub") or d.Text:find("Auto Steal") or d.Text:find("Ronnei Hub")) then
                         isHub = true
                         break
@@ -130,28 +136,30 @@ local function findHub()
     return nil
 end
 
--- ================== PHẦN 5: THÊM BESTPET VÀO TAB AUTO STEAL ==================
+-- ================== THÊM BESTPET VÀO TAB AUTO STEAL ==================
 local function addBestPetToTab(hub)
     if not hub then return end
     
     -- Tìm tab Auto Steal
     local autoStealTab = nil
-    for _, child in ipairs(hub:GetDescendants()) do
+    for _, child in pairs(hub:GetDescendants()) do
         if child:IsA("TextButton") and child.Text:find("Auto Steal") then
             autoStealTab = child
             break
         end
     end
     
-    if not autoStealTab then return end
+    if not autoStealTab then 
+        print("[Ronnei] ⚠️ Không tìm thấy tab Auto Steal")
+        return 
+    end
     
-    -- Tìm frame chứa tab
+    -- Tìm frame chứa nội dung
     local tabFrame = autoStealTab.Parent
     if not tabFrame then return end
     
-    -- Tìm nội dung của tab Auto Steal
     local contentFrame = nil
-    for _, child in ipairs(tabFrame:GetDescendants()) do
+    for _, child in pairs(tabFrame:GetDescendants()) do
         if child:IsA("Frame") and child.Visible == true and child.AbsoluteSize.X > 200 then
             contentFrame = child
             break
@@ -159,6 +167,11 @@ local function addBestPetToTab(hub)
     end
     
     if not contentFrame then return end
+    
+    -- Kiểm tra đã có bảng BestPet chưa
+    if contentFrame:FindFirstChild("RonneiBestPetSection") then
+        return
+    end
     
     -- ====== TẠO BEST PET SECTION ======
     local bestPetFrame = Instance.new("Frame", contentFrame)
@@ -173,7 +186,6 @@ local function addBestPetToTab(hub)
     local corner = Instance.new("UICorner", bestPetFrame)
     corner.CornerRadius = UDim.new(0, 8)
     
-    -- Border
     local border = Instance.new("UIStroke", bestPetFrame)
     border.Color = THEME.Stroke
     border.Thickness = 1
@@ -197,7 +209,7 @@ local function addBestPetToTab(hub)
     divider.BackgroundColor3 = THEME.Stroke
     divider.BackgroundTransparency = 0.5
     
-    -- Pet avatar
+    -- Avatar
     local avatarFrame = Instance.new("Frame", bestPetFrame)
     avatarFrame.Size = UDim2.new(0, 44, 0, 44)
     avatarFrame.Position = UDim2.new(0, 10, 0, 34)
@@ -254,17 +266,7 @@ local function addBestPetToTab(hub)
     local refreshCorner = Instance.new("UICorner", refreshBtn)
     refreshCorner.CornerRadius = UDim.new(0, 4)
     
-    refreshBtn.MouseButton1Click:Connect(function()
-        refreshBtn.Text = "⟳ Đang tải..."
-        refreshBtn.BackgroundColor3 = Color3.fromRGB(200, 150, 50)
-        task.delay(0.5, function()
-            refreshBestPet()
-            refreshBtn.Text = "⟳ Làm mới"
-            refreshBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
-        end)
-    end)
-    
-    -- ====== BIẾN LƯU PET TỐT NHẤT ======
+    -- ====== BIẾN LƯU PET ======
     local currentBestPet = {
         name = "Chưa có",
         rarity = "Unknown",
@@ -277,13 +279,13 @@ local function addBestPetToTab(hub)
         local pets = scanPets()
         local best = nil
         
-        for _, pet in ipairs(pets) do
+        for _, pet in pairs(pets) do
             if not best or pet.tier > best.tier then
                 best = pet
             end
         end
         
-        if best then
+        if best and best.tier > 0 then
             currentBestPet = best
             petName.Text = best.name
             petRarity.Text = "✨ " .. best.rarity
@@ -299,55 +301,79 @@ local function addBestPetToTab(hub)
         end
     end
     
+    -- ====== NÚT LÀM MỚI ======
+    refreshBtn.MouseButton1Click:Connect(function()
+        refreshBtn.Text = "⟳ Đang tải..."
+        refreshBtn.BackgroundColor3 = Color3.fromRGB(200, 150, 50)
+        task.delay(0.5, function()
+            refreshBestPet()
+            refreshBtn.Text = "⟳ Làm mới"
+            refreshBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+        end)
+    end)
+    
     -- ====== VÒNG LẶP CẬP NHẬT ======
     task.spawn(function()
         while true do
             pcall(refreshBestPet)
-            task.wait(1.5)
+            task.wait(CONFIG.UPDATE_INTERVAL)
         end
     end)
     
     print("[Ronnei] ✅ Đã thêm Best Pet vào tab Auto Steal!")
+    return true
 end
 
--- ================== PHẦN 6: CHỜ HUB LOAD ==================
-task.spawn(function()
+-- ================== CHỜ HUB LOAD ==================
+local function waitForHubAndAdd()
     local hub = nil
     local attempts = 0
     
-    while attempts < 20 do
+    print("[Ronnei] 🔍 Đang tìm hub...")
+    
+    while attempts < CONFIG.MAX_RETRIES do
         hub = findHub()
         if hub then
-            -- Đợi hub load đầy đủ
-            task.wait(2)
-            pcall(addBestPetToTab, hub)
+            print("[Ronnei] ✅ Đã tìm thấy hub!")
+            task.wait(2)  -- Đợi hub load đầy đủ
+            local success = pcall(addBestPetToTab, hub)
+            if success then
+                return true
+            end
             break
         end
         attempts = attempts + 1
-        task.wait(1)
+        task.wait(CONFIG.RETRY_DELAY)
     end
     
     if not hub then
-        print("[Ronnei] ⚠️ Không tìm thấy hub, thử tìm lại...")
-        -- Thử lại sau 5 giây
-        task.wait(5)
-        hub = findHub()
-        if hub then
-            pcall(addBestPetToTab, hub)
-        end
+        print("[Ronnei] ❌ Không tìm thấy hub sau " .. CONFIG.MAX_RETRIES .. " lần thử")
+        print("[Ronnei] 💡 Hãy đảm bảo hub đã được load trước khi chạy script này")
+    end
+    
+    return false
+end
+
+-- ================== KHỞI CHẠY ==================
+task.spawn(function()
+    local success = waitForHubAndAdd()
+    
+    if success then
+        print([[
+╔═══════════════════════════════════════════════════════╗
+║  RONNEI BEST PET v5.0.0                             ║
+║  ✅ Đã thêm bảng BestPet vào tab Auto Steal        ║
+║  🔄 Cập nhật mỗi ]] .. CONFIG.UPDATE_INTERVAL .. [[ giây  ║
+║  📦 KHÔNG load script LennonHub                    ║
+╚═══════════════════════════════════════════════════════╝
+]])
+    else
+        print([[
+╔═══════════════════════════════════════════════════════╗
+║  RONNEI BEST PET v5.0.0                             ║
+║  ❌ Không tìm thấy hub để thêm bảng                 ║
+║  💡 Chạy lại sau khi hub đã load xong               ║
+╚═══════════════════════════════════════════════════════╝
+]])
     end
 end)
-
--- ================== PHẦN 7: KHÔNG LOAD LENNONHUB ==================
--- Script này KHÔNG load script LennonHub
--- Chỉ thêm bảng BestPet vào tab Auto Steal
-
--- ================== PHẦN 8: THÔNG BÁO ==================
-print([[
-╔═══════════════════════════════════════════╗
-║  RONNEI BEST PET v5.0.0                  ║
-║  🏆 Chỉ thêm bảng BestPet vào Auto Steal ║
-║  ❌ KHÔNG load script LennonHub          ║
-║  🔄 Tự động cập nhật mỗi 1.5 giây       ║
-╚═══════════════════════════════════════════╝
-]])
