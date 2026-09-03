@@ -1,5 +1,5 @@
 -- ==============================================================================
---  RONNEI HUB - FIXED REVERT BUG + FULL VN + 2X AVATAR FIX + MODERN UI UPGRADE
+--  RONNEI HUB - HIGH CONTRAST + AUTO TOGGLE HOOK + BRIGHT THEME + FULL VN
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -18,27 +18,33 @@ local NEW_IMAGE = "rbxassetid://125111940452696"
 
 getgenv().RonneiTranslateVN = false
 
--- 2. Cấu hình bảng màu & Giao diện nâng cấp (High-Contrast Clean Sleek Theme)
+-- 2. Cấu hình bảng màu sáng sủa, độ tương phản cao (High-Contrast Slate Theme)
 local THEME = {
-    Background = Color3.fromRGB(24, 26, 33),   -- Sáng sủa hơn, dịu mắt
-    Secondary  = Color3.fromRGB(32, 35, 45),   -- Khối container nổi bật rõ ràng
-    Accent     = Color3.fromRGB(0, 210, 130),  -- Xanh lá sáng sinh động
-    TextMain   = Color3.fromRGB(255, 255, 255),-- Trắng tinh tuyệt đối dễ đọc
-    TextSub    = Color3.fromRGB(180, 185, 200),-- Xám sáng thay vì xám tối mờ
-    Stroke     = Color3.fromRGB(65, 70, 90),   -- Viền sắc nét tách biệt các block
+    Background = Color3.fromRGB(28, 31, 42),       -- Nền chính sáng hơn, có chiều sâu
+    Secondary  = Color3.fromRGB(38, 42, 56),       -- Khối container/item nổi bật rõ ràng
+    Accent     = Color3.fromRGB(0, 230, 120),      -- Xanh neon chủ đạo
+    Stroke     = Color3.fromRGB(75, 83, 110),      -- Viền khung sắc nét, rõ biên giới
+    
+    -- Trạng thái Toggle dứt khoát
+    ToggleOn      = Color3.fromRGB(0, 230, 118),   -- BẬT: Xanh Emerald sáng rực rỡ
+    ToggleOnGlow  = Color3.fromRGB(100, 255, 180), -- Viền sáng bổ trợ khi Bật
+    ToggleOff     = Color3.fromRGB(46, 50, 66),    -- TẮT: Xám graphite gọn gàng
+    KnobOn        = Color3.fromRGB(255, 255, 255),  -- Trắng tinh khi Bật
+    KnobOff       = Color3.fromRGB(145, 152, 172), -- Xám bạc khi Tắt
+    
+    -- Chữ hiển thị
+    TextMain   = Color3.fromRGB(255, 255, 255),    -- Trắng sáng 100% cho tiêu đề
+    TextSub    = Color3.fromRGB(195, 202, 220),    -- Bạc sáng rõ ràng cho mô tả
     Font       = Enum.Font.GothamMedium,
     FontBold   = Enum.Font.GothamBold
 }
 
--- 3. Kiểm tra giá trị động (Không can thiệp để tránh xung đột dữ liệu)
+-- 3. Kiểm tra giá trị động (tránh dịch đè làm lỗi hiển thị số liệu)
 local function isDynamicValue(txt)
     if not txt or txt == "" then return true end
     local low = txt:lower()
     
-    if low:find("fps") or low:find("ms") or low:find("ping") then
-        return true
-    end
-    
+    if low:find("fps") or low:find("ms") or low:find("ping") then return true end
     if txt:match("^%s*[%$]?%d+[%d%.]*%s*[a-zA-Z%%/%$]*%s*$") then return true end
     if txt:match("%d+%s*studs/s") or txt:match("%d+%%") or txt:match("%d+%s*pages") then return true end
     if txt:match("%d+m%s*%d+s") or txt:match("%d+:%d+") then return true end
@@ -46,7 +52,7 @@ local function isDynamicValue(txt)
     return false
 end
 
--- 4. Từ điển dịch tiếng Việt chuẩn xác
+-- 4. Từ điển dịch tiếng Việt
 local fullTransTable = {
     -- Sidebar / Tabs
     ["Monster"] = "Quái vật", ["Auto Steal"] = "Tự động trộm", ["Filters"] = "Bộ lọc",
@@ -87,7 +93,7 @@ local fullTransTable = {
     ["Bypassed Speed"] = "Vượt tốc độ tối đa",
     ["Bypassed speed cap"] = "Vượt tốc độ tối đa cap",
 
-    -- Tab Quái vật (Monster)
+    -- Tab Quái vật
     ["Feed him one"] = "Cho quái ăn 1 quả", ["Feed"] = "Cho ăn",
     ["Claim the chest"] = "Nhận rương quái", ["Claim"] = "Nhận rương",
     ["Belly"] = "Bụng quái vật", ["Refresh"] = "Làm mới",
@@ -103,7 +109,7 @@ local fullTransTable = {
     ["turn this off and ur fuel gets planted or sold behind ur back"] = "tắt đi sẽ khiến trứng bị đặt hoặc bán mất",
     ["feeding destroys the egg, so it always picks ur least valuable one"] = "cho ăn sẽ làm mất trứng, luôn chọn quả rẻ nhất",
 
-    -- Tab Bộ lọc (Filters)
+    -- Tab Bộ lọc
     ["Matching right now"] = "Đang khớp điều kiện",
     ["Use rarity filter"] = "Lọc theo độ hiếm", ["Use mutation filter"] = "Lọc theo đột biến",
     ["Minimum weight (Kg)"] = "Trọng lượng tối thiểu (Kg)", ["Clear all"] = "Bỏ chọn tất cả",
@@ -114,7 +120,7 @@ local fullTransTable = {
     ["Jungle"] = "Rừng rậm", ["Snow"] = "Vùng tuyết", ["Volcano"] = "Núi lửa",
     ["Abyss Ocean"] = "Vực biển sâu", ["Prehistoric"] = "Tiền sử",
 
-    -- Tab Máy chủ (Server)
+    -- Tab Máy chủ
     ["Auto Hop"] = "Tự động đổi server", ["Hop now"] = "Đổi server ngay", ["Hop"] = "Đổi ngay",
     ["How hard to look"] = "Độ sâu tìm server", ["Skip full servers"] = "Bỏ qua server đầy",
     ["Reload hub after hopping"] = "Nạp lại hub sau khi đổi", ["Fewest players"] = "Ít người nhất",
@@ -123,7 +129,7 @@ local fullTransTable = {
     ["leave for another server straight away"] = "chuyển sang server khác ngay lập tức",
     ["a full server will just bounce you straight back out"] = "server đầy sẽ khiến bạn bị văng ra ngoài",
 
-    -- Tab Cài đặt (Settings)
+    -- Tab Cài đặt
     ["Import settings"] = "Nhập cài đặt", ["Import"] = "Nhập",
     ["Reset position & size"] = "Đặt lại vị trí & cỡ", ["Reset"] = "Đặt lại",
     ["Export settings"] = "Xuất cài đặt", ["UI scale"] = "Tỷ lệ giao diện",
@@ -149,11 +155,75 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 5. Hàm tiêm hiệu ứng đồ họa hiện đại (Bright & High-Contrast Restyling)
+-- 5. Module can thiệp Toggle gốc (Ép hiển thị BẬT/TẮT siêu tương phản)
+local function hookToggleElement(track)
+    if track:GetAttribute("ToggleHooked") then return end
+
+    -- Tìm con trượt (Knob hình tròn) bên trong Track
+    local knob = nil
+    for _, child in ipairs(track:GetChildren()) do
+        if child:IsA("GuiObject") and math.abs(child.AbsoluteSize.X - child.AbsoluteSize.Y) <= 10 and child.AbsoluteSize.X >= 8 and child.AbsoluteSize.X < track.AbsoluteSize.X then
+            knob = child
+            break
+        end
+    end
+
+    if not knob then return end
+    track:SetAttribute("ToggleHooked", true)
+
+    local stroke = track:FindFirstChild("ToggleStroke")
+    if not stroke then
+        stroke = Instance.new("UIStroke")
+        stroke.Name = "ToggleStroke"
+        stroke.Thickness = 1.2
+        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        stroke.Parent = track
+    end
+
+    local updating = false
+    local function updateVisual()
+        if updating then return end
+        updating = true
+
+        local trackWidth = track.AbsoluteSize.X
+        local knobX = knob.Position.X.Offset + (knob.Position.X.Scale * trackWidth)
+        -- Knob nằm quá 35% chiều rộng -> Trạng thái BẬT
+        local isOn = knobX > (trackWidth * 0.35) or knob.Position.X.Scale > 0.4
+
+        track.BackgroundColor3 = isOn and THEME.ToggleOn or THEME.ToggleOff
+        knob.BackgroundColor3 = isOn and THEME.KnobOn or THEME.KnobOff
+        stroke.Color = isOn and THEME.ToggleOnGlow or THEME.Stroke
+        stroke.Transparency = isOn and 0 or 0.2
+
+        updating = false
+    end
+
+    updateVisual()
+
+    -- Bắt sự kiện khi người dùng click bật/tắt để đổi màu ngay lập tức
+    knob:GetPropertyChangedSignal("Position"):Connect(updateVisual)
+    track:GetPropertyChangedSignal("BackgroundColor3"):Connect(function()
+        if not updating then updateVisual() end
+    end)
+end
+
+-- 6. Áp dụng phong cách đồ họa sáng sủa & font chữ sắc nét
 local function applyModernVisuals(obj)
+    if obj:GetAttribute("IsLangToggle") then return end
+
+    -- 6.1. Nhận diện nút gạt Toggle gốc (Kích thước chuẩn dạng viên thuốc)
+    if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
+        local sz = obj.AbsoluteSize
+        if sz.X >= 26 and sz.X <= 65 and sz.Y >= 14 and sz.Y <= 32 and sz.X > (sz.Y * 1.2) then
+            hookToggleElement(obj)
+            return
+        end
+    end
+
     if obj:GetAttribute("RestyledModern") then return end
     obj:SetAttribute("RestyledModern", true)
 
+    -- 6.2. Nâng cấp Panel & Khung chứa
     if obj:IsA("Frame") then
         if obj.BackgroundTransparency < 0.9 then
             if obj.AbsoluteSize.X >= 280 and obj.AbsoluteSize.Y >= 180 then
@@ -166,65 +236,61 @@ local function applyModernVisuals(obj)
                 local stroke = Instance.new("UIStroke")
                 stroke.Color = THEME.Stroke
                 stroke.Thickness = 1.2
-                stroke.Transparency = 0.3 -- Rõ nét hơn, không bị mờ
+                stroke.Transparency = 0.1
                 stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
                 stroke.Parent = obj
             end
 
             if not obj:FindFirstChildOfClass("UICorner") and obj.AbsoluteSize.X > 20 then
                 local corner = Instance.new("UICorner")
-                corner.CornerRadius = UDim.new(0, 6)
+                corner.CornerRadius = UDim.new(0, 7)
                 corner.Parent = obj
             end
         end
 
+    -- 6.3. Tối ưu văn bản: Chữ lớn/Tiêu đề trắng tinh 100%, chú thích màu bạc sáng
     elseif obj:IsA("TextLabel") then
-        if not obj:GetAttribute("IsLangToggle") then
-            obj.Font = (obj.TextSize >= 14) and THEME.FontBold or THEME.Font
-            -- Nâng cấp độ tương phản cho chữ: nếu màu chữ quá tối sẽ tự đổi thành trắng/xám sáng
-            if obj.TextColor3.R < 0.4 and obj.TextColor3.G < 0.4 and obj.TextColor3.B < 0.4 then
-                obj.TextColor3 = THEME.TextMain
-            else
-                obj.TextColor3 = THEME.TextSub
-            end
+        if obj.TextSize >= 13 then
+            obj.Font = THEME.FontBold
+            obj.TextColor3 = THEME.TextMain
+        else
+            obj.Font = THEME.Font
+            obj.TextColor3 = THEME.TextSub
         end
 
+    -- 6.4. Nút bấm thông thường (Không phải Toggle)
     elseif obj:IsA("TextButton") or obj:IsA("ImageButton") then
-        if not obj:GetAttribute("IsLangToggle") then
-            if obj:IsA("TextButton") then
-                obj.Font = THEME.FontBold
-                if obj.TextColor3.R < 0.4 then
-                    obj.TextColor3 = THEME.TextMain
-                end
-            end
-
-            if not obj:FindFirstChildOfClass("UICorner") and obj.AbsoluteSize.X > 15 then
-                local corner = Instance.new("UICorner")
-                corner.CornerRadius = UDim.new(0, 6)
-                corner.Parent = obj
-            end
-
-            local origColor = obj.BackgroundColor3
-            obj.MouseEnter:Connect(function()
-                if obj.BackgroundTransparency < 0.9 then
-                    TweenService:Create(obj, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
-                        BackgroundColor3 = THEME.Accent
-                    }):Play()
-                end
-            end)
-
-            obj.MouseLeave:Connect(function()
-                if obj.BackgroundTransparency < 0.9 then
-                    TweenService:Create(obj, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
-                        BackgroundColor3 = origColor
-                    }):Play()
-                end
-            end)
+        if obj:IsA("TextButton") then
+            obj.Font = THEME.FontBold
+            obj.TextColor3 = THEME.TextMain
         end
+
+        if not obj:FindFirstChildOfClass("UICorner") and obj.AbsoluteSize.X > 15 then
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = UDim.new(0, 6)
+            corner.Parent = obj
+        end
+
+        local origColor = obj.BackgroundColor3
+        obj.MouseEnter:Connect(function()
+            if obj.BackgroundTransparency < 0.9 and not obj:GetAttribute("ToggleHooked") then
+                TweenService:Create(obj, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+                    BackgroundColor3 = THEME.Accent
+                }):Play()
+            end
+        end)
+
+        obj.MouseLeave:Connect(function()
+            if obj.BackgroundTransparency < 0.9 and not obj:GetAttribute("ToggleHooked") then
+                TweenService:Create(obj, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+                    BackgroundColor3 = origColor
+                }):Play()
+            end
+        end)
     end
 end
 
--- 6. Bộ điều phối chính kết hợp Dịch thuật + Skinning + Nút gạt trạng thái cực rõ
+-- 7. Bộ điều phối chính kết hợp Dịch thuật + Nút gạt ngôn ngữ
 task.spawn(function()
     local searchReplaced = false
 
@@ -249,11 +315,10 @@ task.spawn(function()
                     end)
 
                     if isHub then
-                        -- Tự động làm đẹp toàn bộ các đối tượng hiển thị
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
-                            -- 6.1. Xử lý bản dịch văn bản
+                            -- 7.1. Xử lý dịch thuật
                             if desc:IsA("TextLabel") or desc:IsA("TextButton") then
                                 local txt = desc.Text
 
@@ -310,7 +375,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 6.2. Thay thế Avatar chữ B
+                        -- 7.2. Thay thế Avatar
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
@@ -325,7 +390,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 6.3. Tích hợp nút gạt ngôn ngữ với độ tương phản cực rõ (ON = Xanh sáng lá, OFF = Xám đậm rõ ràng)
+                        -- 7.3. Tích hợp thanh chuyển đổi ngôn ngữ
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
@@ -365,35 +430,35 @@ task.spawn(function()
                                         langLabel.Size = UDim2.new(1, -55, 1, 0)
                                         langLabel.Position = UDim2.new(0, 12, 0, 0)
                                         langLabel.Text = "ON = Tiếng Việt | OFF = English"
-                                        langLabel.Font = Enum.Font.GothamBold
-                                        langLabel.TextSize = 10
-                                        langLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                                        langLabel.Font = THEME.FontBold
+                                        langLabel.TextSize = 11
+                                        langLabel.TextColor3 = THEME.TextMain
                                         langLabel.TextXAlignment = Enum.TextXAlignment.Left
                                         langLabel.BackgroundTransparency = 1
                                         langLabel.ZIndex = 41
                                         langLabel:SetAttribute("IsLangToggle", true)
 
                                         local sw = Instance.new("TextButton", langModule)
-                                        sw.Size = UDim2.new(0, 40, 0, 20)
-                                        sw.Position = UDim2.new(1, -48, 0.5, 0)
+                                        sw.Size = UDim2.new(0, 42, 0, 22)
+                                        sw.Position = UDim2.new(1, -50, 0.5, 0)
                                         sw.AnchorPoint = Vector2.new(0, 0.5)
-                                        sw.BackgroundColor3 = getgenv().RonneiTranslateVN and Color3.fromRGB(0, 210, 130) or Color3.fromRGB(80, 85, 105)
+                                        sw.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.ToggleOn or THEME.ToggleOff
                                         sw.Text = ""
                                         sw.AutoButtonColor = false
                                         sw.ZIndex = 41
                                         sw:SetAttribute("IsLangToggle", true)
-                                        
+
                                         local swStroke = Instance.new("UIStroke", sw)
-                                        swStroke.Color = Color3.fromRGB(120, 130, 160)
-                                        swStroke.Thickness = 1
-                                        
+                                        swStroke.Color = getgenv().RonneiTranslateVN and THEME.ToggleOnGlow or THEME.Stroke
+                                        swStroke.Thickness = 1.2
+
                                         Instance.new("UICorner", sw).CornerRadius = UDim.new(1, 0)
 
                                         local knob = Instance.new("Frame", sw)
                                         knob.Size = UDim2.new(0, 16, 0, 16)
-                                        knob.Position = getgenv().RonneiTranslateVN and UDim2.new(1, -18, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
+                                        knob.Position = getgenv().RonneiTranslateVN and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
                                         knob.AnchorPoint = Vector2.new(0, 0.5)
-                                        knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                                        knob.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.KnobOn or THEME.KnobOff
                                         knob.BorderSizePixel = 0
                                         knob.ZIndex = sw.ZIndex + 1
                                         Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
@@ -401,8 +466,10 @@ task.spawn(function()
                                         sw.MouseButton1Click:Connect(function()
                                             getgenv().RonneiTranslateVN = not getgenv().RonneiTranslateVN
                                             local active = getgenv().RonneiTranslateVN
-                                            sw.BackgroundColor3 = active and Color3.fromRGB(0, 210, 130) or Color3.fromRGB(80, 85, 105)
-                                            knob.Position = active and UDim2.new(1, -18, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
+                                            sw.BackgroundColor3 = active and THEME.ToggleOn or THEME.ToggleOff
+                                            swStroke.Color = active and THEME.ToggleOnGlow or THEME.Stroke
+                                            knob.BackgroundColor3 = active and THEME.KnobOn or THEME.KnobOff
+                                            knob.Position = active and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
                                         end)
 
                                         searchReplaced = true
@@ -414,6 +481,6 @@ task.spawn(function()
                 end
             end
         end)
-        task.wait(0.4)
+        task.wait(0.35)
     end
 end)
