@@ -1,12 +1,12 @@
 -- ==============================================================================
---  RONNEI HUB - INTEGRATED LENNON HUB TELEPORT + REMOVED OLD AUTO STEAL + FULL VN
+--  RONNEI HUB - AUTO STEAL V1 & V2 SPLIT + LENNON HUB DOCKED + FULL VN 100%
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- 1. Khởi chạy đồng thời Script Gốc (Luarmor) và Lennon Hub (Teleport Steal)
+-- 1. Khởi chạy song song Script Gốc và Lennon Hub
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9ee4edde227ac85f50872bf9e4226508.lua"))()
@@ -39,12 +39,11 @@ local THEME = {
     
     TextMain      = Color3.fromRGB(255, 255, 255),
     TextSub       = Color3.fromRGB(195, 202, 220),
-    TextHighlight = Color3.fromRGB(255, 75, 110),
     Font          = Enum.Font.GothamMedium,
     FontBold      = Enum.Font.GothamBold
 }
 
--- 3. Bộ lọc tránh dịch đè các thông số đo lường
+-- 3. Bộ lọc kiểm tra giá trị đo lường thuần túy
 local function isPureMetric(txt)
     if not txt or txt == "" then return true end
     local low = txt:lower()
@@ -238,6 +237,11 @@ local fullTransTable = {
     ["Start minimised"] = "Thu nhỏ khi chạy", ["Search settings..."] = "Tìm kiếm cài đặt...",
     ["Copy"] = "Sao chép",
 
+    -- Từ khóa Lennon Hub
+    ["BEST EGG"] = "TRỨNG TỐT NHẤT",
+    ["TELEPORT"] = "DỊCH CHUYỂN TRỘM",
+    ["ONE TELEPORT"] = "DỊCH CHUYỂN TỨC THÌ",
+
     -- Map & Độ hiếm
     ["Forest"] = "Rừng xanh", ["Lake"] = "Hồ nước", ["Desert"] = "Sa mạc",
     ["Jungle"] = "Rừng rậm", ["Snow"] = "Vùng tuyết", ["Volcano"] = "Núi lửa",
@@ -259,7 +263,7 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 6. Hook trực tiếp Toggle theo vị trí thực tế
+-- 6. Hook trực tiếp Toggle theo vị trí thực tế trên màn hình
 local function hookToggleElement(track)
     if track:GetAttribute("ToggleHooked") then return end
 
@@ -313,236 +317,38 @@ local function hookToggleElement(track)
     end)
 end
 
--- 7. Bộ điều khiển đồng bộ Lennon Hub (Ẩn GUI trôi nổi và điều hướng logic)
-local lennonState = {
-    teleportEnabled = false,
-    bestEggName = "Đang quét...",
-    bestEggRarity = "...",
-    bestEggPrice = "$0"
-}
-
--- Vòng lặp giám sát và ẩn GUI nổi của Lennon Hub, đồng thời lấy dữ liệu Best Egg
-task.spawn(function()
-    while true do
-        pcall(function()
-            local containers = {CoreGui}
-            if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
-                table.insert(containers, LocalPlayer.PlayerGui)
-            end
-            if gethui then table.insert(containers, gethui()) end
-
-            for _, cont in ipairs(containers) do
-                for _, g in ipairs(cont:GetChildren()) do
-                    if g:IsA("ScreenGui") and g.Name ~= "RonneiHub" then
-                        local hasLennon = false
-                        for _, d in ipairs(g:GetDescendants()) do
-                            if d:IsA("TextLabel") and (d.Text:find("BEST EGG") or d.Text:find("TELEPORT") or d.Text:find("ONE TELEPORT")) then
-                                hasLennon = true
-                                break
-                            end
-                        end
-
-                        if hasLennon then
-                            -- Thu thập thông số Best Egg từ Lennon Hub
-                            for _, d in ipairs(g:GetDescendants()) do
-                                if d:IsA("TextLabel") then
-                                    local t = d.Text
-                                    if t:find("%$") and (t:find("K") or t:find("M") or t:find("B")) then
-                                        lennonState.bestEggPrice = t
-                                    elseif t == "Mythic" or t == "Legendary" or t == "Divine" or t == "Secret" or t == "Cosmic" then
-                                        lennonState.bestEggRarity = t
-                                    elseif d.TextSize >= 15 and t ~= "BEST EGG" and t ~= "TELEPORT" and t ~= "ONE TELEPORT" and not t:find("%$") then
-                                        lennonState.bestEggName = t
-                                    end
-                                end
-                            end
-
-                            -- Tự động ẩn cửa sổ ngoài màn hình của Lennon Hub để tích hợp gọn vào menu Ronnei
-                            if g.Enabled then
-                                g.Enabled = false
-                            end
-                        end
-                    end
-                end
-            end
-        end)
-        task.wait(0.5)
+-- 7. Tìm kiếm ScreenGui độc lập của Lennon Hub (tránh quét nhầm Ronnei Hub)
+local function getLennonGui()
+    local containers = {CoreGui}
+    if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
+        table.insert(containers, LocalPlayer.PlayerGui)
     end
-end)
+    if gethui then table.insert(containers, gethui()) end
 
--- Hàm kích hoạt nút Teleport của Lennon Hub
-local function triggerLennonTeleport(targetState)
-    lennonState.teleportEnabled = targetState
-
-    -- Nếu Lennon Hub dùng cờ biến toàn cục
-    if getgenv().Teleport ~= nil then getgenv().Teleport = targetState end
-    if getgenv().OneTeleport ~= nil then getgenv().OneTeleport = targetState end
-    if _G.Teleport ~= nil then _G.Teleport = targetState end
-
-    -- Bấm trực tiếp nút toggle trong giao diện Lennon
-    pcall(function()
-        local containers = {CoreGui}
-        if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
-            table.insert(containers, LocalPlayer.PlayerGui)
-        end
-        if gethui then table.insert(containers, gethui()) end
-
-        for _, cont in ipairs(containers) do
-            for _, g in ipairs(cont:GetChildren()) do
-                if g:IsA("ScreenGui") and g.Name ~= "RonneiHub" then
-                    for _, d in ipairs(g:GetDescendants()) do
-                        if d:IsA("TextButton") or d:IsA("ImageButton") then
-                            local p = d.Parent
-                            if p then
-                                for _, lbl in ipairs(p:GetDescendants()) do
-                                    if lbl:IsA("TextLabel") and (lbl.Text:find("TELEPORT") or lbl.Text:find("ONE TELEPORT")) then
-                                        d.MouseButton1Click:Fire()
-                                        break
-                                    end
-                                end
-                            end
-                        end
+    for _, cont in ipairs(containers) do
+        for _, g in ipairs(cont:GetChildren()) do
+            if g:IsA("ScreenGui") and not g:GetAttribute("IsRonneiHubMain") then
+                local hasBestEgg = false
+                for _, d in ipairs(g:GetDescendants()) do
+                    if d:IsA("TextLabel") and (d.Text:upper():find("BEST EGG") or d.Text:upper():find("ONE TELEPORT")) then
+                        hasBestEgg = true
+                        break
                     end
+                end
+                if hasBestEgg then
+                    g:SetAttribute("IsLennonGui", true)
+                    return g
                 end
             end
         end
-    end)
+    end
+    return nil
 end
 
--- 8. Tạo Widget Lennon Hub thay thế 2 tính năng cũ của Auto Steal
-local function buildLennonWidget(parentContainer)
-    if parentContainer:FindFirstChild("RonneiLennonModule") then return end
-
-    local card = Instance.new("Frame")
-    card.Name = "RonneiLennonModule"
-    card.Size = UDim2.new(1, 0, 0, 105)
-    card.BackgroundColor3 = THEME.Secondary
-    card.BorderSizePixel = 0
-    card.LayoutOrder = 1
-    card.Parent = parentContainer
-
-    local corner = Instance.new("UICorner", card)
-    corner.CornerRadius = UDim.new(0, 8)
-
-    local stroke = Instance.new("UIStroke", card)
-    stroke.Color = THEME.Stroke
-    stroke.Thickness = 1.2
-
-    -- Hàng 1: Best Egg Display
-    local eggIcon = Instance.new("TextLabel", card)
-    eggIcon.Size = UDim2.new(0, 36, 0, 36)
-    eggIcon.Position = UDim2.new(0, 10, 0, 8)
-    eggIcon.BackgroundColor3 = Color3.fromRGB(20, 22, 30)
-    eggIcon.Text = "🥚"
-    eggIcon.TextSize = 20
-    Instance.new("UICorner", eggIcon).CornerRadius = UDim.new(0, 6)
-
-    local eggTitle = Instance.new("TextLabel", card)
-    eggTitle.Name = "EggTitle"
-    eggTitle.Size = UDim2.new(1, -170, 0, 18)
-    eggTitle.Position = UDim2.new(0, 54, 0, 8)
-    eggTitle.BackgroundTransparency = 1
-    eggTitle.Font = THEME.FontBold
-    eggTitle.TextSize = 13
-    eggTitle.TextColor3 = THEME.TextMain
-    eggTitle.TextXAlignment = Enum.TextXAlignment.Left
-    eggTitle.Text = "TRỨNG NGON NHẤT"
-
-    local eggRarity = Instance.new("TextLabel", card)
-    eggRarity.Name = "EggRarity"
-    eggRarity.Size = UDim2.new(1, -170, 0, 16)
-    eggRarity.Position = UDim2.new(0, 54, 0, 26)
-    eggRarity.BackgroundTransparency = 1
-    eggRarity.Font = THEME.Font
-    eggRarity.TextSize = 11
-    eggRarity.TextColor3 = THEME.TextHighlight
-    eggRarity.TextXAlignment = Enum.TextXAlignment.Left
-    eggRarity.Text = "Đang tìm kiếm..."
-
-    local eggPrice = Instance.new("TextLabel", card)
-    eggPrice.Name = "EggPrice"
-    eggPrice.Size = UDim2.new(0, 100, 0, 36)
-    eggPrice.Position = UDim2.new(1, -112, 0, 8)
-    eggPrice.BackgroundTransparency = 1
-    eggPrice.Font = THEME.FontBold
-    eggPrice.TextSize = 14
-    eggPrice.TextColor3 = THEME.Accent
-    eggPrice.TextXAlignment = Enum.TextXAlignment.Right
-    eggPrice.Text = "$0/s"
-
-    local divider = Instance.new("Frame", card)
-    divider.Size = UDim2.new(1, -20, 0, 1)
-    divider.Position = UDim2.new(0, 10, 0, 50)
-    divider.BackgroundColor3 = THEME.Stroke
-    divider.BorderSizePixel = 0
-
-    -- Hàng 2: Toggle Dịch chuyển tức thì (Lennon Teleport)
-    local tpTitle = Instance.new("TextLabel", card)
-    tpTitle.Size = UDim2.new(1, -75, 0, 20)
-    tpTitle.Position = UDim2.new(0, 12, 0, 57)
-    tpTitle.BackgroundTransparency = 1
-    tpTitle.Font = THEME.FontBold
-    tpTitle.TextSize = 12
-    tpTitle.TextColor3 = THEME.TextMain
-    tpTitle.TextXAlignment = Enum.TextXAlignment.Left
-    tpTitle.Text = "Dịch chuyển trộm (Lennon Teleport)"
-
-    local tpSub = Instance.new("TextLabel", card)
-    tpSub.Size = UDim2.new(1, -75, 0, 16)
-    tpSub.Position = UDim2.new(0, 12, 0, 77)
-    tpSub.BackgroundTransparency = 1
-    tpSub.Font = THEME.Font
-    tpSub.TextSize = 10
-    tpSub.TextColor3 = THEME.TextSub
-    tpSub.TextXAlignment = Enum.TextXAlignment.Left
-    tpSub.Text = "Dịch chuyển tức thì đến quả trứng xịn nhất để lấy"
-
-    local sw = Instance.new("TextButton", card)
-    sw.Size = UDim2.new(0, 44, 0, 22)
-    sw.Position = UDim2.new(1, -56, 0, 64)
-    sw.BackgroundColor3 = THEME.ToggleOff
-    sw.Text = ""
-    sw.AutoButtonColor = false
-
-    local swStroke = Instance.new("UIStroke", sw)
-    swStroke.Color = THEME.Stroke
-    swStroke.Thickness = 1.2
-    Instance.new("UICorner", sw).CornerRadius = UDim.new(1, 0)
-
-    local knob = Instance.new("Frame", sw)
-    knob.Size = UDim2.new(0, 16, 0, 16)
-    knob.Position = UDim2.new(0, 3, 0.5, 0)
-    knob.AnchorPoint = Vector2.new(0, 0.5)
-    knob.BackgroundColor3 = THEME.KnobOff
-    knob.BorderSizePixel = 0
-    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
-
-    sw.MouseButton1Click:Connect(function()
-        lennonState.teleportEnabled = not lennonState.teleportEnabled
-        local active = lennonState.teleportEnabled
-        sw.BackgroundColor3 = active and THEME.ToggleOn or THEME.ToggleOff
-        swStroke.Color = active and THEME.ToggleOnGlow or THEME.Stroke
-        knob.BackgroundColor3 = active and THEME.KnobOn or THEME.KnobOff
-        knob.Position = active and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
-        triggerLennonTeleport(active)
-    end)
-
-    -- Cập nhật dữ liệu hiển thị định kỳ
-    task.spawn(function()
-        while card and card.Parent do
-            eggTitle.Text = lennonState.bestEggName ~= "" and lennonState.bestEggName or "TRỨNG NGON NHẤT"
-            eggRarity.Text = lennonState.bestEggRarity
-            eggPrice.Text = lennonState.bestEggPrice
-            task.wait(0.4)
-        end
-    end)
-end
-
--- 9. Áp dụng phong cách sáng sủa & Ẩn 2 tính năng Auto Steal cũ
+-- 8. Áp dụng phong cách sáng sủa cho toàn bộ đối tượng GUI
 local function applyModernVisuals(obj)
     if obj:GetAttribute("IsLangToggle") then return end
 
-    -- Tự động nhận diện công tắc trượt
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
         if sz.X >= 26 and sz.X <= 65 and sz.Y >= 14 and sz.Y <= 32 and sz.X > (sz.Y * 1.2) then
@@ -618,7 +424,7 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 10. Vòng lặp điều phối chính
+-- 9. Vòng lặp điều phối chính: Phân tách Auto Steal V1 & V2 + Dịch thuật
 task.spawn(function()
     local searchReplaced = false
 
@@ -643,35 +449,100 @@ task.spawn(function()
                     end)
 
                     if isHub then
+                        child:SetAttribute("IsRonneiHubMain", true)
+
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
-                            -- 10.1. Xử lý triệt tiêu 2 tính năng cũ của Auto Steal và chèn Lennon Hub
-                            if desc:IsA("TextLabel") then
-                                local t = desc.Text:lower()
-                                -- Nhận diện dòng "Tự động trộm" (hoặc Auto Steal)
-                                if (t == "tự động trộm" or t == "auto steal") and desc.Parent and desc.Parent.Name ~= "Sidebar" then
-                                    local rowFrame = desc.Parent
-                                    if rowFrame:IsA("Frame") and rowFrame.AbsoluteSize.Y < 80 then
-                                        rowFrame.Visible = false
-                                        rowFrame.Size = UDim2.new(0, 0, 0, 0)
-                                        if rowFrame.Parent then
-                                            buildLennonWidget(rowFrame.Parent)
-                                        end
-                                    end
-                                end
+                            -- 9.1. PHÂN TÁCH KHÔNG GIAN AUTO STEAL V1 & AUTO STEAL V2
+                            if desc:IsA("TextLabel") and (desc.Text == "AUTO STEAL" or desc.Text == "TRỘM TRỨNG") then
+                                -- Đổi tên Header V1
+                                desc.Text = "AUTO STEAL V1 (MẶC ĐỊNH - BAY LƯỢN)"
 
-                                -- Nhận diện dòng "Nếu không khớp lọc, vẫn lấy quả..."
-                                if t:find("nếu không khớp lọc") or t:find("if nothing matches") then
-                                    local rowFrame = desc.Parent
-                                    if rowFrame:IsA("Frame") and rowFrame.AbsoluteSize.Y < 80 then
-                                        rowFrame.Visible = false
-                                        rowFrame.Size = UDim2.new(0, 0, 0, 0)
+                                local sectionContainer = desc.Parent
+                                if sectionContainer and (sectionContainer:IsA("ScrollingFrame") or sectionContainer:IsA("Frame")) then
+                                    -- Tìm hàng thứ 2 của V1 ("Nếu không khớp lọc...") để đặt V2 ngay phía dưới nó
+                                    local row2 = nil
+                                    for _, c in ipairs(sectionContainer:GetChildren()) do
+                                        if c:IsA("Frame") then
+                                            for _, lbl in ipairs(c:GetDescendants()) do
+                                                if lbl:IsA("TextLabel") and (lbl.Text:find("khớp lọc") or lbl.Text:find("matches")) then
+                                                    row2 = c
+                                                    break
+                                                end
+                                            end
+                                        end
+                                        if row2 then break end
+                                    end
+
+                                    if row2 then
+                                        -- Đảm bảo cả 2 hàng V1 LUÔN LUÔN HIỂN THỊ ĐẦY ĐỦ
+                                        row2.Visible = true
+                                        if row2.Parent then
+                                            for _, sib in ipairs(row2.Parent:GetChildren()) do
+                                                if sib:IsA("Frame") then sib.Visible = true end
+                                            end
+                                        end
+
+                                        -- Tạo Header AUTO STEAL V2 nếu chưa có
+                                        local v2Header = sectionContainer:FindFirstChild("RonneiV2Header")
+                                        if not v2Header then
+                                            v2Header = Instance.new("TextLabel")
+                                            v2Header.Name = "RonneiV2Header"
+                                            v2Header.Size = UDim2.new(1, 0, 0, 24)
+                                            v2Header.BackgroundTransparency = 1
+                                            v2Header.Font = THEME.FontBold
+                                            v2Header.TextSize = 11
+                                            v2Header.TextColor3 = THEME.TextSub
+                                            v2Header.TextXAlignment = Enum.TextXAlignment.Left
+                                            v2Header.Text = "AUTO STEAL V2 (DỊCH CHUYỂN TỨC THÌ / TELEPORT)"
+                                            v2Header.LayoutOrder = row2.LayoutOrder + 1
+                                            v2Header.Parent = sectionContainer
+                                        end
+
+                                        -- Tạo Khung chứa V2 (V2 Holder) để nhúng Lennon Hub
+                                        local v2Holder = sectionContainer:FindFirstChild("RonneiV2Holder")
+                                        if not v2Holder then
+                                            v2Holder = Instance.new("Frame")
+                                            v2Holder.Name = "RonneiV2Holder"
+                                            v2Holder.Size = UDim2.new(1, 0, 0, 0)
+                                            v2Holder.AutomaticSize = Enum.AutomaticSize.Y
+                                            v2Holder.BackgroundTransparency = 1
+                                            v2Holder.BorderSizePixel = 0
+                                            v2Holder.LayoutOrder = row2.LayoutOrder + 2
+                                            
+                                            local list = Instance.new("UIListLayout", v2Holder)
+                                            list.SortOrder = Enum.SortOrder.LayoutOrder
+                                            list.Padding = UDim.new(0, 6)
+                                            v2Holder.Parent = sectionContainer
+                                        end
+
+                                        -- Nhúng các thẻ của Lennon Hub vào V2 Holder (chỉ di chuyển duy nhất 1 lần)
+                                        local lennonGui = getLennonGui()
+                                        if lennonGui and v2Holder and not v2Holder:GetAttribute("LennonDocked") then
+                                            for _, obj in ipairs(lennonGui:GetChildren()) do
+                                                if obj:IsA("GuiObject") and obj.Visible then
+                                                    obj.Parent = v2Holder
+                                                    obj.Draggable = false
+                                                    obj.Active = false
+                                                    obj.Position = UDim2.new(0, 0, 0, 0)
+                                                    obj.Size = UDim2.new(1, 0, 0, obj.AbsoluteSize.Y > 0 and obj.AbsoluteSize.Y or 60)
+                                                    
+                                                    if obj:IsA("Frame") then
+                                                        obj.BackgroundColor3 = THEME.Secondary
+                                                        local strk = obj:FindFirstChildOfClass("UIStroke") or Instance.new("UIStroke", obj)
+                                                        strk.Thickness = 1.2
+                                                        strk.Color = THEME.Stroke
+                                                    end
+                                                end
+                                            end
+                                            v2Holder:SetAttribute("LennonDocked", true)
+                                        end
                                     end
                                 end
                             end
 
-                            -- 10.2. Dịch thuật toàn văn
+                            -- 9.2. DỊCH THUẬT TOÀN BỘ VĂN BẢN
                             if desc:IsA("TextLabel") or desc:IsA("TextButton") then
                                 local txt = desc.Text
 
@@ -737,7 +608,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 10.3. Thay thế Avatar bản quyền
+                        -- 9.3. Thay thế Avatar bản quyền
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
@@ -752,7 +623,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 10.4. Thanh công tắc ngôn ngữ
+                        -- 9.4. Thanh công tắc ngôn ngữ Tiếng Việt & English
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
