@@ -1,12 +1,12 @@
 -- ==============================================================================
---  RONNEI HUB - ONLY BEST PET EMBEDDED ABOVE AUTO STEAL + 100% VN + SAFE TEXTURE
+--  RONNEI HUB - FIXED LENNON BEST PET PINNING + 100% CLEAN UI + FULL VN
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- 1. Khởi chạy Script Gốc và Lennon Hub (chạy ngầm để lấy dữ liệu Best Pet)
+-- 1. Khởi chạy Script Gốc và Lennon Hub chạy ngầm
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9ee4edde227ac85f50872bf9e4226508.lua"))()
@@ -24,7 +24,7 @@ local NEW_IMAGE = "rbxassetid://125111940452696"
 
 getgenv().RonneiTranslateVN = false
 
--- 2. Cấu hình bảng màu giao diện sáng sủa & tương phản cao
+-- 2. Cấu hình bảng màu sắc nét (High-Contrast Slate Theme)
 local THEME = {
     Background    = Color3.fromRGB(28, 31, 42),
     Secondary     = Color3.fromRGB(38, 42, 56),
@@ -312,8 +312,8 @@ local function hookToggleElement(track)
     end)
 end
 
--- 7. Module chuyên biệt: Chỉ lấy BEST EGG và ẩn sạch toàn bộ GUI còn lại của Lennon Hub
-local function isolateAndGetBestEggCard()
+-- 7. Trích xuất chính xác duy nhất thẻ BEST EGG & Ẩn sạch rác ngoài màn hình
+local function extractBestEggCardOnly()
     local containers = {CoreGui}
     if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
         table.insert(containers, LocalPlayer.PlayerGui)
@@ -323,44 +323,42 @@ local function isolateAndGetBestEggCard()
     for _, cont in ipairs(containers) do
         for _, gui in ipairs(cont:GetChildren()) do
             if gui:IsA("ScreenGui") and gui.Name ~= "RonneiHub" then
-                local bestEggLabel = nil
+                local bestEggText = nil
 
                 for _, desc in ipairs(gui:GetDescendants()) do
-                    if desc:IsA("TextLabel") and desc.Text:upper():find("BEST EGG") then
-                        bestEggLabel = desc
+                    if desc:IsA("TextLabel") and desc.Text:upper() == "BEST EGG" then
+                        bestEggText = desc
                         break
                     end
                 end
 
-                if bestEggLabel then
-                    -- Tìm đúng Card Frame của Best Egg
-                    local card = bestEggLabel
-                    while card.Parent and card.Parent ~= gui and not card.Parent:IsA("ScreenGui") do
-                        local p = card.Parent
-                        if p:FindFirstChildOfClass("UIListLayout") or p.Size.Y.Offset > 130 then
+                if bestEggText then
+                    -- Lấy đúng thẻ card chứa Best Egg
+                    local card = bestEggText.Parent
+                    while card and card.Parent and not card.Parent:IsA("ScreenGui") do
+                        if card.AbsoluteSize.Y >= 40 and card.AbsoluteSize.Y <= 95 then
                             break
                         end
-                        card = p
+                        card = card.Parent
                     end
 
-                    -- Gắn nhãn bảo vệ để không bị can thiệp đồ họa hay đổi ảnh pet
+                    -- Khóa bảo vệ thẻ Pet
                     card:SetAttribute("IsBestEggCard", true)
                     for _, sub in ipairs(card:GetDescendants()) do
                         sub:SetAttribute("IsBestEggCard", true)
                     end
 
-                    -- ẨN TOÀN BỘ CÁC PHẦN CÒN LẠI CỦA LENNON HUB (Khung logo xanh, nút teleport...)
-                    for _, elem in ipairs(gui:GetChildren()) do
-                        if elem ~= card and not elem:IsAncestorOf(card) and not elem:IsDescendantOf(card) then
-                            elem.Visible = false
+                    -- ẨN SẠCH CÁC PHẦN CÒN LẠI CỦA LENNON HUB (Main Header, Teleport, Nút tròn logo)
+                    for _, child in ipairs(gui:GetChildren()) do
+                        if child ~= card and not child:IsAncestorOf(card) then
+                            child.Visible = false
                         end
                     end
-                    for _, elem in ipairs(gui:GetDescendants()) do
-                        if elem:IsA("GuiObject") and elem ~= card and not elem:IsAncestorOf(card) and not elem:IsDescendantOf(card) then
-                            -- Nếu là nút tròn logo ngoài màn hình hoặc card teleport thì ẩn ngay
-                            local t = (elem:IsA("TextLabel") or elem:IsA("TextButton")) and elem.Text:lower() or ""
-                            if t:find("lennon") or t:find("teleport") or t:find("reset") or elem.Name:lower():find("logo") then
-                                elem.Visible = false
+                    for _, desc in ipairs(gui:GetDescendants()) do
+                        if desc:IsA("GuiObject") and desc ~= card and not desc:IsDescendantOf(card) and not card:IsDescendantOf(desc) then
+                            local t = (desc:IsA("TextLabel") or desc:IsA("TextButton")) and desc.Text:upper() or ""
+                            if t:find("LENNON") or t:find("TELEPORT") or desc.Name:lower():find("logo") then
+                                desc.Visible = false
                             end
                         end
                     end
@@ -373,7 +371,7 @@ local function isolateAndGetBestEggCard()
     return nil
 end
 
--- 8. Nâng cấp đồ họa sáng sủa (Bỏ qua hoàn toàn Best Egg Card)
+-- 8. Áp dụng phong cách sáng sủa
 local function applyModernVisuals(obj)
     if obj:GetAttribute("IsLangToggle") or obj:GetAttribute("IsBestEggCard") then return end
 
@@ -477,13 +475,24 @@ task.spawn(function()
                     end)
 
                     if isHub then
-                        local bestEggCard = isolateAndGetBestEggCard()
+                        local bestEggCard = extractBestEggCardOnly()
 
                         for _, desc in ipairs(child:GetDescendants()) do
+                            -- Tiêu diệt triệt để nếu thanh Header Lennon Hub bị dính nhầm vào trong Ronnei Hub
+                            if desc:IsA("TextLabel") and desc.Text:upper():find("LENNON HUB") then
+                                local unwanted = desc
+                                while unwanted.Parent and unwanted.Parent ~= child and not unwanted.Parent:IsA("ScreenGui") do
+                                    if unwanted.Parent:FindFirstChildOfClass("UIListLayout") then break end
+                                    unwanted = unwanted.Parent
+                                end
+                                unwanted.Visible = false
+                                unwanted.Size = UDim2.new(0, 0, 0, 0)
+                            end
+
                             pcall(applyModernVisuals, desc)
 
-                            -- 9.1. Gắn thẻ BEST EGG vào ngay TRÊN hàng "Tự động trộm"
-                            if desc:IsA("TextLabel") and (desc.Text == "Tự động trộm" or desc.Text == "Auto Steal") and desc.AbsolutePosition.X > 160 then
+                            -- 9.1. Ghim thẻ Best Egg vào ngay TRÊN hàng Auto Steal
+                            if desc:IsA("TextLabel") and (desc.Text == "Tự động trộm" or desc.Text == "Auto Steal") and desc.AbsolutePosition.X > 180 then
                                 local autoStealRow = desc
                                 while autoStealRow.Parent and not autoStealRow.Parent:IsA("ScreenGui") do
                                     if autoStealRow.Parent:FindFirstChildOfClass("UIListLayout") then
@@ -498,10 +507,12 @@ task.spawn(function()
                                     bestEggCard.Visible = true
                                     bestEggCard.Active = false
                                     bestEggCard.Draggable = false
-                                    bestEggCard.Size = UDim2.new(1, 0, 0, 56)
+                                    bestEggCard.Size = UDim2.new(1, 0, 0, 58)
+                                    bestEggCard.Position = UDim2.new(0, 0, 0, 0)
+                                    bestEggCard.AnchorPoint = Vector2.new(0, 0)
                                     bestEggCard.BackgroundColor3 = THEME.Secondary
 
-                                    -- Đảm bảo LayoutOrder nằm ngay phía trên hàng Tự động trộm
+                                    -- Ghim thẻ nằm ngay sát trên hàng Tự động trộm
                                     local listLayout = listContainer:FindFirstChildOfClass("UIListLayout")
                                     if listLayout then
                                         listLayout.SortOrder = Enum.SortOrder.LayoutOrder
@@ -520,7 +531,7 @@ task.spawn(function()
                                 end
                             end
 
-                            -- 9.2. Dịch văn bản
+                            -- 9.2. Dịch thuật toàn bộ menu
                             if (desc:IsA("TextLabel") or desc:IsA("TextButton")) and not desc:GetAttribute("IsBestEggCard") then
                                 local txt = desc.Text
 
@@ -586,7 +597,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 9.3. Thay thế Avatar bản quyền (Bỏ qua hoàn toàn ảnh Pet)
+                        -- 9.3. Thay Avatar Header (Bảo vệ tuyệt đối ảnh Pet)
                         for _, img in ipairs(child:GetDescendants()) do
                             if (img:IsA("ImageLabel") or img:IsA("ImageButton")) and not img:GetAttribute("IsBestEggCard") then
                                 local sz = img.AbsoluteSize
