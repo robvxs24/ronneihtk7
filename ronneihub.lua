@@ -1,12 +1,11 @@
 -- ==============================================================================
---  RONNEI HUB - FIXED HEADER TIKTOK BADGE + SEAMLESS SEARCH BAR LANG TOGGLE
+--  RONNEI HUB - FIXED HEADER TIKTOK & SEAMLESS SEARCH BAR LANG TOGGLE
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- 1. Khởi chạy script gốc (Đã gỡ sạch 100% Lennon Hub & Best Pet)
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9ee4edde227ac85f50872bf9e4226508.lua"))()
@@ -17,9 +16,8 @@ local NEW_NAME = "Ronnei Hub"
 local NEW_IMAGE = "rbxassetid://125111940452696"
 local TIKTOK_TAG = "TikTok: ronnei7.htk"
 
-getgenv().RonneiTranslateVN = true -- Mặc định bật tiếng Việt
+getgenv().RonneiTranslateVN = true
 
--- 2. Bảng màu tương phản cao (High-Contrast Slate Theme)
 local THEME = {
     Background    = Color3.fromRGB(28, 31, 42),
     Secondary     = Color3.fromRGB(38, 42, 56),
@@ -38,7 +36,6 @@ local THEME = {
     FontBold      = Enum.Font.GothamBold
 }
 
--- 3. Kiểm tra số liệu thuần túy để không dịch nhầm
 local function isPureMetric(txt)
     if not txt or txt == "" then return true end
     local low = txt:lower()
@@ -49,7 +46,6 @@ local function isPureMetric(txt)
     return false
 end
 
--- 4. Bộ chuyển ngữ câu dài & thông số động
 local function translateDynamicCounters(txt)
     local res = txt
 
@@ -79,7 +75,6 @@ local function translateDynamicCounters(txt)
     return res
 end
 
--- 5. Từ điển dịch tiếng Việt đầy đủ 100%
 local fullTransTable = {
     ["Steal Method"] = "Phương thức trộm",
     ["Instant Steal/TP"] = "Trộm tức thì / TP",
@@ -175,7 +170,7 @@ local fullTransTable = {
 
     ["Webhook URL"] = "Đường dẫn Webhook",
     ["your channel -> Edit -> Integrations -> Webhooks -> Sao chép URL · sends a test message"] = "kênh của bạn -> Sửa kênh -> Tích hợp -> Webhooks -> Sao chép URL · gửi tin nhắn thử nghiệm",
-    ["your channel → Edit -> Integrations -> Webhooks → Sao chép URL · sends a test message"] = "kênh của bạn -> Sửa kênh -> Tích hợp -> Webhooks -> Sao chép URL · gửi tin nhắn thử nghiệm",
+    ["your channel → Edit → Integrations → Webhooks → Sao chép URL · sends a test message"] = "kênh của bạn -> Sửa kênh -> Tích hợp -> Webhooks -> Sao chép URL · gửi tin nhắn thử nghiệm",
     ["Share my rare pulls"] = "Chia sẻ trứng hiếm nhặt được",
     ["What gets shared"] = "Dữ liệu được chia sẻ",
     ["the exact list, so you never have to take our word for it"] = "danh sách dữ liệu chính xác, minh bạch hoàn toàn",
@@ -271,42 +266,19 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 6. GẮN CHUẨN XÁC TIKTOK BADGE VÀO TOPBAR (KHÔNG ĐÈ CHỮ, KHÔNG RƠI XUỐNG GIỮA)
-local function injectTikTokToHeader(topbar, titleObj)
-    if not topbar then return end
-
-    -- Xóa badge trùng lặp hoặc badge cũ bị lỗi
-    local oldBadge = topbar:FindFirstChild("RonneiTikTokHeaderBadge")
-    if oldBadge then return end
-
-    -- Đo khoảng cách thực tế giữa Title (v1.5) và FPS label
-    local leftBound = (titleObj.AbsolutePosition.X - topbar.AbsolutePosition.X) + titleObj.AbsoluteSize.X + 45
-    local rightBound = topbar.AbsoluteSize.X - 10
-
-    for _, d in ipairs(topbar:GetDescendants()) do
-        if d:IsA("TextLabel") and d.Text:lower():find("fps") then
-            local fpsX = d.AbsolutePosition.X - topbar.AbsolutePosition.X
-            if fpsX > leftBound and fpsX < rightBound then
-                rightBound = fpsX - 10
-            end
-        end
-    end
-
-    local availableSpace = rightBound - leftBound
-    if availableSpace < 80 then return end -- Nếu màn hình quá bé thì không chèn để tránh đè
-
-    local badgeW = math.clamp(availableSpace - 16, 110, 165)
-    local centerEmptyX = (leftBound + rightBound) / 2
+-- GẮN CỐ ĐỊNH DUY NHẤT HUY HIỆU TIKTOK LÊN THANH HEADER TRÊN CÙNG
+local function injectTikTokToHeader(headerFrame)
+    if not headerFrame or headerFrame:FindFirstChild("RonneiTikTokHeaderBadge") then return end
 
     local badge = Instance.new("Frame")
     badge.Name = "RonneiTikTokHeaderBadge"
-    badge.Size = UDim2.new(0, badgeW, 0, 24)
-    badge.Position = UDim2.new(0, centerEmptyX, 0.5, 0)
+    badge.Size = UDim2.new(0, 160, 0, 24)
+    badge.Position = UDim2.new(0.55, 0, 0.5, 0)
     badge.AnchorPoint = Vector2.new(0.5, 0.5)
     badge.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
     badge.BorderSizePixel = 0
-    badge.ZIndex = 80
-    badge.Parent = topbar
+    badge.ZIndex = 60
+    badge.Parent = headerFrame
 
     local corner = Instance.new("UICorner", badge)
     corner.CornerRadius = UDim.new(1, 0)
@@ -330,7 +302,7 @@ local function injectTikTokToHeader(topbar, titleObj)
     label.Font = THEME.FontBold
     label.TextSize = 11
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.ZIndex = 81
+    label.ZIndex = 61
 
     local textGrad = Instance.new("UIGradient", label)
     textGrad.Color = ColorSequence.new({
@@ -350,52 +322,53 @@ local function injectTikTokToHeader(topbar, titleObj)
     end)
 end
 
--- 7. CHUYỂN ĐỔI KHỚP THANH TÌM KIẾM THÀNH NÚT GẠT NGÔN NGỮ
-local function replaceSearchBarWithLangToggle(searchContainer, searchObj)
-    if not searchContainer or searchContainer:FindFirstChild("RonneiLangModule") then return end
+-- THAY THẾ KHỚP 100% VÀO KHUNG TÌM KIẾM (SEARCH BAR)
+local function replaceSearchBarWithLang(textBox)
+    local searchContainer = textBox.Parent
+    if not searchContainer or not searchContainer:IsA("GuiObject") then return end
+    if searchContainer:FindFirstChild("RonneiLangModule") then return end
 
-    -- Ẩn ô nhập liệu tìm kiếm và các biểu tượng kính lúp bên trong
-    searchObj.Visible = false
-    if searchObj:IsA("TextBox") then searchObj.TextEditable = false end
+    textBox.Visible = false
+    if textBox:IsA("TextBox") then textBox.TextEditable = false end
     for _, sibling in ipairs(searchContainer:GetChildren()) do
-        if sibling:IsA("ImageLabel") or sibling:IsA("TextLabel") or sibling:IsA("TextBox") then
+        if sibling:IsA("GuiObject") and sibling ~= textBox then
             sibling.Visible = false
         end
     end
 
-    -- Tạo khung ngôn ngữ khớp vừa khít với Search Container gốc
     local langModule = Instance.new("Frame", searchContainer)
     langModule.Name = "RonneiLangModule"
     langModule.Size = UDim2.new(1, 0, 1, 0)
     langModule.BackgroundTransparency = 1
-    langModule.ZIndex = 40
+    langModule.ZIndex = searchContainer.ZIndex + 5
 
     local langLabel = Instance.new("TextLabel", langModule)
     langLabel.Name = "LangLabel"
     langLabel.Size = UDim2.new(1, -60, 1, 0)
-    langLabel.Position = UDim2.new(0, 14, 0, 0)
+    langLabel.Position = UDim2.new(0, 12, 0, 0)
     langLabel.Text = "ON = Tiếng Việt | OFF = English"
     langLabel.Font = THEME.FontBold
-    langLabel.TextSize = 12
+    langLabel.TextSize = 11
     langLabel.TextColor3 = THEME.TextMain
     langLabel.TextXAlignment = Enum.TextXAlignment.Left
     langLabel.BackgroundTransparency = 1
-    langLabel.ZIndex = 41
+    langLabel.ZIndex = langModule.ZIndex + 1
     langLabel:SetAttribute("IsLangToggle", true)
 
     local sw = Instance.new("TextButton", langModule)
-    sw.Size = UDim2.new(0, 44, 0, 22)
-    sw.Position = UDim2.new(1, -52, 0.5, 0)
+    sw.Size = UDim2.new(0, 42, 0, 22)
+    sw.Position = UDim2.new(1, -50, 0.5, 0)
     sw.AnchorPoint = Vector2.new(0, 0.5)
     sw.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.ToggleOn or THEME.ToggleOff
     sw.Text = ""
     sw.AutoButtonColor = false
-    sw.ZIndex = 41
+    sw.ZIndex = langModule.ZIndex + 1
     sw:SetAttribute("IsLangToggle", true)
 
     local swStroke = Instance.new("UIStroke", sw)
     swStroke.Color = getgenv().RonneiTranslateVN and THEME.ToggleOnGlow or THEME.Stroke
     swStroke.Thickness = 1.2
+
     Instance.new("UICorner", sw).CornerRadius = UDim.new(1, 0)
 
     local knob = Instance.new("Frame", sw)
@@ -404,7 +377,7 @@ local function replaceSearchBarWithLangToggle(searchContainer, searchObj)
     knob.AnchorPoint = Vector2.new(0, 0.5)
     knob.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.KnobOn or THEME.KnobOff
     knob.BorderSizePixel = 0
-    knob.ZIndex = 42
+    knob.ZIndex = sw.ZIndex + 1
     Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 
     sw.MouseButton1Click:Connect(function()
@@ -417,7 +390,6 @@ local function replaceSearchBarWithLangToggle(searchContainer, searchObj)
     end)
 end
 
--- 8. Hook trực tiếp Toggle gốc
 local function hookToggleElement(track)
     if track:GetAttribute("ToggleHooked") then return end
 
@@ -471,9 +443,8 @@ local function hookToggleElement(track)
     end)
 end
 
--- 9. Nâng cấp đồ họa hiện đại
 local function applyModernVisuals(obj)
-    if obj:GetAttribute("IsLangToggle") or obj.Name == "RonneiTikTokHeaderBadge" then return end
+    if obj:GetAttribute("IsLangToggle") or obj.Name == "RonneiTikTokHeaderBadge" or obj.Name == "RonneiLangModule" then return end
 
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
@@ -550,7 +521,7 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 10. VÒNG LẶP ĐIỀU PHỐI CHÍNH
+-- VÒNG LẶP ĐIỀU PHỐI CHÍNH
 task.spawn(function()
     while true do
         pcall(function()
@@ -560,25 +531,24 @@ task.spawn(function()
             end
             if gethui then table.insert(allContainers, gethui()) end
 
-            -- Xóa sạch các badge trôi nổi cũ hoặc nút rác
+            -- Tiêu hủy vĩnh viễn nút thừa hoặc TikTok badge trôi ở giữa
             for _, cont in ipairs(allContainers) do
                 for _, obj in ipairs(cont:GetDescendants()) do
-                    if obj:IsA("GuiObject") then
+                    if obj.Name == "RonneiLangBarDedicated" then
+                        obj:Destroy()
+                    elseif obj.Name == "RonneiTikTokHeaderBadge" or obj.Name == "RonneiTikTokBadge" then
+                        local root = obj:FindFirstAncestorOfClass("Frame")
+                        while root and root.Parent and root.Parent:IsA("Frame") do
+                            root = root.Parent
+                        end
+                        if root and (obj.AbsolutePosition.Y - root.AbsolutePosition.Y > 50) then
+                            obj:Destroy()
+                        end
+                    elseif obj:IsA("GuiObject") then
                         local t = (obj:IsA("TextLabel") or obj:IsA("TextButton")) and obj.Text:upper() or ""
                         local n = obj.Name:lower()
                         if t:find("RESET GUI") or t:find("LENNON") or (t == "≡" and obj.AbsoluteSize.X < 65) or n:find("lennon") then
                             obj.Visible = false
-                            obj:Destroy()
-                        end
-                        -- Tiêu hủy ngay nếu có TikTok badge bị gán nhầm ngoài Topbar
-                        if obj.Name == "RonneiTikTokHeaderBadge" or obj.Name == "RonneiTikTokBadge" then
-                            local rootWindow = obj:FindFirstAncestorOfClass("Frame")
-                            if rootWindow and (obj.AbsolutePosition.Y - rootWindow.AbsolutePosition.Y > 60) then
-                                obj:Destroy()
-                            end
-                        end
-                        -- Tiêu hủy thanh Dedicated cũ nếu còn sót
-                        if obj.Name == "RonneiLangBarDedicated" then
                             obj:Destroy()
                         end
                     end
@@ -598,46 +568,48 @@ task.spawn(function()
                     end)
 
                     if isHub then
-                        -- 10.1. Dò tìm Topbar và gắn TikTok Badge vào đúng khoảng trống
-                        for _, d in ipairs(child:GetDescendants()) do
-                            if d:IsA("TextLabel") and (d.Text == NEW_NAME or d.Text:find("BK's Hub")) then
-                                local topbar = d.Parent
-                                while topbar and topbar.Parent and not topbar.Parent:IsA("ScreenGui") do
-                                    if topbar.AbsoluteSize.Y >= 25 and topbar.AbsoluteSize.Y <= 65 and topbar.AbsoluteSize.X >= 250 then
-                                        break
+                        local rootWin = nil
+                        for _, f in ipairs(child:GetDescendants()) do
+                            if f:IsA("Frame") and f.AbsoluteSize.X >= 400 and f.AbsoluteSize.Y >= 250 then
+                                rootWin = f
+                                break
+                            end
+                        end
+
+                        -- Gắn TikTok duy nhất lên thanh Header trên cùng
+                        if rootWin then
+                            for _, d in ipairs(rootWin:GetDescendants()) do
+                                if d:IsA("TextLabel") and (d.Text == NEW_NAME or d.Text:find("BK's Hub")) then
+                                    if math.abs(d.AbsolutePosition.Y - rootWin.AbsolutePosition.Y) <= 40 then
+                                        local header = d.Parent
+                                        while header and header ~= rootWin and header.Parent ~= rootWin do
+                                            if header.AbsoluteSize.Y <= 60 and header.AbsoluteSize.X >= 300 then break end
+                                            header = header.Parent
+                                        end
+                                        if header and not header:FindFirstChild("RonneiTikTokHeaderBadge") then
+                                            injectTikTokToHeader(header)
+                                        end
                                     end
-                                    topbar = topbar.Parent
-                                end
-                                if topbar and topbar.AbsoluteSize.Y <= 65 then
-                                    injectTikTokToHeader(topbar, d)
                                 end
                             end
                         end
 
-                        -- 10.2. Dò tìm thanh tìm kiếm và thay thế hoàn hảo bằng nút gạt ngôn ngữ
-                        for _, obj in ipairs(child:GetDescendants()) do
-                            local isSearch = false
-                            if obj:IsA("TextBox") then
-                                local pText = (obj.PlaceholderText or ""):lower()
-                                local text = (obj.Text or ""):lower()
-                                local name = obj.Name:lower()
-                                if pText:find("search") or text:find("search") or name:find("search") or pText:find("tìm kiếm") then
-                                    isSearch = true
+                        -- Thay thế thanh tìm kiếm (Search Bar) bằng module ngôn ngữ
+                        for _, desc in ipairs(child:GetDescendants()) do
+                            if desc:IsA("TextBox") then
+                                local pText = desc.PlaceholderText:lower()
+                                if pText:find("search") or desc.Name:lower():find("search") then
+                                    replaceSearchBarWithLang(desc)
                                 end
-                            elseif obj:IsA("TextLabel") then
-                                local text = (obj.Text or ""):lower()
-                                local name = obj.Name:lower()
-                                if text:find("search settings") or name:find("search") then
-                                    isSearch = true
+                            elseif desc:IsA("TextLabel") and desc.Text:lower():find("search") and not desc:GetAttribute("IsLangToggle") then
+                                local p = desc.Parent
+                                if p and p:FindFirstChildOfClass("TextBox") then
+                                    replaceSearchBarWithLang(p:FindFirstChildOfClass("TextBox"))
                                 end
-                            end
-
-                            if isSearch and obj.Parent and not obj.Parent:FindFirstChild("RonneiLangModule") then
-                                replaceSearchBarWithLangToggle(obj.Parent, obj)
                             end
                         end
 
-                        -- 10.3. Dịch văn bản và làm đẹp
+                        -- Dịch thuật văn bản & làm đẹp
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
@@ -684,23 +656,10 @@ task.spawn(function()
                                         end
                                     end
                                 end
-                            elseif desc:IsA("TextBox") then
-                                local pl = desc.PlaceholderText
-                                if not desc:GetAttribute("OrigPlaceholder") and pl ~= "" then
-                                    desc:SetAttribute("OrigPlaceholder", pl)
-                                end
-                                local origPl = desc:GetAttribute("OrigPlaceholder") or pl
-                                if getgenv().RonneiTranslateVN then
-                                    desc.PlaceholderText = fullTransTable[origPl] or origPl
-                                else
-                                    if desc:GetAttribute("OrigPlaceholder") then
-                                        desc.PlaceholderText = desc:GetAttribute("OrigPlaceholder")
-                                    end
-                                end
                             end
                         end
 
-                        -- 10.4. Thay Avatar Header góc trên bên trái
+                        -- Avatar góc trên bên trái
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
@@ -718,6 +677,6 @@ task.spawn(function()
                 end
             end
         end)
-        task.wait(0.25)
+        task.wait(0.3)
     end
 end)
