@@ -1,5 +1,5 @@
 -- ==============================================================================
---  RONNEI HUB - KEYLESS INNER BADGE + TIKTOK OUTER HEADER + CLEAN SEARCH TOGGLE
+--  RONNEI HUB - 100% VIETNAMESE + COMPACT KEYLESS BADGE (ZERO OVERLAP)
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
@@ -15,11 +15,11 @@ end)
 
 local NEW_NAME = "Ronnei Hub"
 local NEW_IMAGE = "rbxassetid://125111940452696"
-local TIKTOK_TAG = "TikTok: ronnei7.htk"
+local BADGE_TEXT = "Keyless"
 
 getgenv().RonneiTranslateVN = true
 
--- 2. Bảng màu giao diện Slate Theme
+-- 2. Bảng màu tương phản cao (High-Contrast Slate Theme)
 local THEME = {
     Background    = Color3.fromRGB(28, 31, 42),
     Secondary     = Color3.fromRGB(38, 42, 56),
@@ -38,7 +38,7 @@ local THEME = {
     FontBold      = Enum.Font.GothamBold
 }
 
--- 3. Kiểm tra đo lường thuần túy
+-- 3. Kiểm tra các giá trị đo lường thuần túy
 local function isPureMetric(txt)
     if not txt or txt == "" then return true end
     local low = txt:lower()
@@ -49,7 +49,7 @@ local function isPureMetric(txt)
     return false
 end
 
--- 4. Bộ chuyển ngữ chuyên sâu: Dịch chuỗi động, mô tả tính năng
+-- 4. Bộ chuyển ngữ chuỗi động
 local function translateDynamicCounters(txt)
     local res = txt
 
@@ -79,7 +79,7 @@ local function translateDynamicCounters(txt)
     return res
 end
 
--- 5. Từ điển dịch tiếng Việt đầy đủ 100%
+-- 5. Từ điển dịch tiếng Việt 100%
 local fullTransTable = {
     ["Steal Method"] = "Phương thức trộm",
     ["Instant Steal/TP"] = "Trộm tức thì / TP",
@@ -271,93 +271,94 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 6. GẮN HUY HIỆU "Keyless" GỌN GÀNG TRÊN ĐẦU MENU (KHÔNG BỊ ĐÈ CHỮ)
-local function injectKeylessBadge(innerHeader)
-    if not innerHeader or innerHeader:FindFirstChild("RonneiKeylessBadge") then return end
-
-    local badge = Instance.new("Frame")
-    badge.Name = "RonneiKeylessBadge"
-    badge.Size = UDim2.new(0, 64, 0, 20)
-    -- Căn cạnh cụm tiêu đề (v1.5), tuyệt đối không đụng vào FPS bên phải
-    badge.Position = UDim2.new(0, 185, 0.5, 0)
-    badge.AnchorPoint = Vector2.new(0, 0.5)
-    badge.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
-    badge.BorderSizePixel = 0
-    badge.ZIndex = 50
-    badge.Parent = innerHeader
-
-    local corner = Instance.new("UICorner", badge)
-    corner.CornerRadius = UDim.new(1, 0)
-
-    local stroke = Instance.new("UIStroke", badge)
-    stroke.Color = THEME.Accent
-    stroke.Thickness = 1.2
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
-    local label = Instance.new("TextLabel", badge)
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = "Keyless"
-    label.Font = THEME.FontBold
-    label.TextSize = 10
-    label.TextColor3 = THEME.Accent
-    label.ZIndex = 51
-end
-
--- 7. GIỮ NGUYÊN HUY HIỆU TIKTOK Ở THANH TRẠNG THÁI TRÊN ĐẦU Ở NGOÀI
-local function handleOuterTikTokBadge(outerBar)
-    if not outerBar or outerBar:FindFirstChild("RonneiOuterTikTok") then return end
-
-    local badge = Instance.new("Frame")
-    badge.Name = "RonneiOuterTikTok"
-    badge.Size = UDim2.new(0, 155, 0, 24)
-    badge.Position = UDim2.new(0, 52, 0.5, 0)
-    badge.AnchorPoint = Vector2.new(0, 0.5)
-    badge.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
-    badge.BorderSizePixel = 0
-    badge.ZIndex = 45
-    badge.Parent = outerBar
-
-    local corner = Instance.new("UICorner", badge)
-    corner.CornerRadius = UDim.new(1, 0)
-
-    local stroke = Instance.new("UIStroke", badge)
-    stroke.Color = THEME.Accent
-    stroke.Thickness = 1.4
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
-    local strokeGrad = Instance.new("UIGradient", stroke)
-    strokeGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 230, 120)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 215, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 230, 120))
-    })
-
-    local label = Instance.new("TextLabel", badge)
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = TIKTOK_TAG
-    label.Font = THEME.FontBold
-    label.TextSize = 11
-    label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.ZIndex = 46
-
-    task.spawn(function()
-        local rot = 0
-        while badge.Parent do
-            rot = (rot + 3) % 360
-            strokeGrad.Rotation = rot
-            task.wait(0.03)
+-- 6. TÌM CHÍNH XÁC TOPBAR HEADER
+local function getTrueHeader(hubGui)
+    for _, d in ipairs(hubGui:GetDescendants()) do
+        if d:IsA("TextLabel") and (d.Text:find("fps") or d.Text:find("ms")) then
+            local curr = d.Parent
+            while curr and curr ~= hubGui and not curr:IsA("ScreenGui") do
+                if curr:IsA("Frame") and curr.AbsoluteSize.Y >= 25 and curr.AbsoluteSize.Y <= 65 and curr.AbsoluteSize.X >= 280 then
+                    return curr
+                end
+                curr = curr.Parent
+            end
+            return d.Parent
         end
-    end)
+    end
+    return nil
 end
 
--- 8. THAY THẾ THANH TÌM KIẾM BẰNG CÔNG TẮC NGÔN NGỮ VỪA KHÍT 100%
-local function morphSearchBarToLangToggle(hubGui)
-    -- Dọn sạch các thanh tạo nhầm ở ngoài
-    local strayBar = hubGui:FindFirstChild("RonneiLangBarDedicated", true)
-    if strayBar then strayBar:Destroy() end
+-- 7. GẮN CỐ ĐỊNH HUY HIỆU "KEYLESS" NHỎ GỌN TRÊN ĐẦU MENU (ZERO OVERLAP)
+local function handleKeylessBadge(hubGui)
+    local header = getTrueHeader(hubGui)
+    if not header then return end
 
+    -- Tiêu diệt triệt để các badge TikTok cũ nếu còn tồn tại
+    for _, b in ipairs(hubGui:GetDescendants()) do
+        if b.Name == "RonneiTikTokHeaderBadge" or b.Name == "RonneiTikTokBadge" or (b:IsA("TextLabel") and b.Text:find("ronnei7.htk")) then
+            local p = b:IsA("TextLabel") and b.Parent or b
+            p:Destroy()
+        end
+    end
+
+    local existingBadge = header:FindFirstChild("RonneiKeylessBadge")
+    if not existingBadge then
+        existingBadge = Instance.new("Frame")
+        existingBadge.Name = "RonneiKeylessBadge"
+        existingBadge.Size = UDim2.new(0, 60, 0, 20)
+        -- Căn vào chính giữa khoảng trống, không chạm chữ Ronnei Hub lẫn FPS
+        existingBadge.Position = UDim2.new(0.46, 0, 0.5, 0)
+        existingBadge.AnchorPoint = Vector2.new(0.5, 0.5)
+        existingBadge.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
+        existingBadge.BorderSizePixel = 0
+        existingBadge.ZIndex = 50
+        existingBadge.Parent = header
+
+        local corner = Instance.new("UICorner", existingBadge)
+        corner.CornerRadius = UDim.new(1, 0)
+
+        local stroke = Instance.new("UIStroke", existingBadge)
+        stroke.Color = THEME.Accent
+        stroke.Thickness = 1.2
+        stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+        local strokeGrad = Instance.new("UIGradient", stroke)
+        strokeGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 230, 120)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 215, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 230, 120))
+        })
+
+        local label = Instance.new("TextLabel", existingBadge)
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Text = BADGE_TEXT
+        label.Font = THEME.FontBold
+        label.TextSize = 10
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.ZIndex = 51
+
+        local textGrad = Instance.new("UIGradient", label)
+        textGrad.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(140, 255, 210)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+        })
+
+        task.spawn(function()
+            local rot = 0
+            while existingBadge.Parent do
+                rot = (rot + 3) % 360
+                strokeGrad.Rotation = rot
+                textGrad.Rotation = rot
+                task.wait(0.03)
+            end
+        end)
+    end
+end
+
+-- 8. THAY THẾ THANH TÌM KIẾM BẰNG CÔNG TẮC NGÔN NGỮ KHỚP VỪA VẶN 100%
+local function morphSearchBarToLangToggle(hubGui)
     for _, obj in ipairs(hubGui:GetDescendants()) do
         local isSearch = false
         if obj:IsA("TextBox") then
@@ -376,18 +377,18 @@ local function morphSearchBarToLangToggle(hubGui)
         end
 
         if isSearch then
-            local container = obj.Parent
-            if container and not container:FindFirstChild("RonneiLangModule") then
+            local searchBarContainer = obj.Parent
+            if searchBarContainer and not searchBarContainer:FindFirstChild("RonneiLangModule") then
                 obj.Visible = false
                 if obj:IsA("TextBox") then obj.TextEditable = false end
 
-                for _, sib in ipairs(container:GetChildren()) do
+                for _, sib in ipairs(searchBarContainer:GetChildren()) do
                     if sib:IsA("GuiObject") and sib.Name ~= "RonneiLangModule" and not sib:IsA("UIStroke") and not sib:IsA("UICorner") then
                         sib.Visible = false
                     end
                 end
 
-                local langModule = Instance.new("Frame", container)
+                local langModule = Instance.new("Frame", searchBarContainer)
                 langModule.Name = "RonneiLangModule"
                 langModule.Size = UDim2.new(1, 0, 1, 0)
                 langModule.BackgroundTransparency = 1
@@ -408,7 +409,7 @@ local function morphSearchBarToLangToggle(hubGui)
 
                 local sw = Instance.new("TextButton", langModule)
                 sw.Size = UDim2.new(0, 42, 0, 22)
-                sw.Position = UDim2.new(1, -48, 0.5, 0)
+                sw.Position = UDim2.new(1, -50, 0.5, 0)
                 sw.AnchorPoint = Vector2.new(0, 0.5)
                 sw.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.ToggleOn or THEME.ToggleOff
                 sw.Text = ""
@@ -500,7 +501,7 @@ end
 
 -- 10. Nâng cấp đồ họa hiện đại
 local function applyModernVisuals(obj)
-    if obj:GetAttribute("IsLangToggle") or obj.Name == "RonneiKeylessBadge" or obj.Name == "RonneiOuterTikTok" then return end
+    if obj:GetAttribute("IsLangToggle") or obj.Name == "RonneiKeylessBadge" or obj.Name == "RonneiLangModule" then return end
 
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
@@ -614,34 +615,13 @@ task.spawn(function()
                     end)
 
                     if isHub then
-                        -- 11.1. Xử lý thanh tiêu đề trong Menu (Gắn "Keyless" gọn gàng)
-                        for _, d in ipairs(child:GetDescendants()) do
-                            if d:IsA("TextLabel") and (d.Text == NEW_NAME or d.Text:find("BK's Hub")) then
-                                local parentBox = d.Parent
-                                while parentBox and parentBox.Parent and not parentBox.Parent:IsA("ScreenGui") do
-                                    if parentBox:IsA("Frame") and parentBox.AbsoluteSize.Y >= 25 and parentBox.AbsoluteSize.Y <= 65 and parentBox.AbsoluteSize.X >= 280 then
-                                        break
-                                    end
-                                    parentBox = parentBox.Parent
-                                end
-                                if parentBox then
-                                    injectKeylessBadge(parentBox)
-                                end
-                            end
-                        end
+                        -- 11.1. Gắn cố định huy hiệu "Keyless" vào Header (Zero Overlap)
+                        handleKeylessBadge(child)
 
-                        -- 11.2. Xử lý thanh trạng thái nổi ngoài cùng (Giữ nguyên "TikTok: ronnei7.htk")
-                        for _, f in ipairs(child:GetDescendants()) do
-                            if f:IsA("Frame") and f.AbsoluteSize.Y <= 45 and f.AbsoluteSize.X >= 200 and f.AbsoluteSize.X <= 450 then
-                                -- Đây là Topbar nổi bên ngoài màn hình
-                                handleOuterTikTokBadge(f)
-                            end
-                        end
-
-                        -- 11.3. Thay thế ô tìm kiếm thành công tắc ngôn ngữ vừa vặn
+                        -- 11.2. Biến đổi thanh tìm kiếm thành công tắc ngôn ngữ vừa vặn
                         morphSearchBarToLangToggle(child)
 
-                        -- 11.4. Dịch thuật & Nâng cấp giao diện
+                        -- 11.3. Dịch văn bản và làm đẹp
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
@@ -659,7 +639,7 @@ task.spawn(function()
                                         desc.Visible = false
                                     end
                                 else
-                                    if not desc:GetAttribute("IsLangToggle") and desc.Name ~= "RonneiKeylessBadge" and desc.Name ~= "RonneiOuterTikTok" and not isPureMetric(txt) then
+                                    if not desc:GetAttribute("IsLangToggle") and desc.Name ~= "RonneiKeylessBadge" and not isPureMetric(txt) then
                                         if not desc:GetAttribute("OriginalText") and txt ~= "" then
                                             desc:SetAttribute("OriginalText", txt)
                                         end
@@ -688,10 +668,23 @@ task.spawn(function()
                                         end
                                     end
                                 end
+                            elseif desc:IsA("TextBox") then
+                                local pl = desc.PlaceholderText
+                                if not desc:GetAttribute("OrigPlaceholder") and pl ~= "" then
+                                    desc:SetAttribute("OrigPlaceholder", pl)
+                                end
+                                local origPl = desc:GetAttribute("OrigPlaceholder") or pl
+                                if getgenv().RonneiTranslateVN then
+                                    desc.PlaceholderText = fullTransTable[origPl] or origPl
+                                else
+                                    if desc:GetAttribute("OrigPlaceholder") then
+                                        desc.PlaceholderText = desc:GetAttribute("OrigPlaceholder")
+                                    end
+                                end
                             end
                         end
 
-                        -- 11.5. Thay Avatar Header góc trên bên trái
+                        -- 11.4. Thay Avatar Header góc trên bên trái
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
