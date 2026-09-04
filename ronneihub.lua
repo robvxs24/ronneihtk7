@@ -1,12 +1,12 @@
 -- ==============================================================================
---  RONNEI HUB - 100% VIETNAMESE + TIKTOK GLOW BADGE + DYNAMIC TRANSLATION
+--  RONNEI HUB - 100% VIETNAMESE + PINNED TIKTOK HEADER BADGE + FIXED LANG BAR
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- 1. Khởi chạy script gốc từ Loader Luarmor (Không chứa bất kỳ code Lennon/BestPet nào)
+-- 1. Khởi chạy script gốc (Đã gỡ bỏ 100% code Lennon Hub & Best Pet)
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9ee4edde227ac85f50872bf9e4226508.lua"))()
@@ -17,7 +17,7 @@ local NEW_NAME = "Ronnei Hub"
 local NEW_IMAGE = "rbxassetid://125111940452696"
 local TIKTOK_TAG = "TikTok: ronnei7.htk"
 
-getgenv().RonneiTranslateVN = true -- Mặc định bật tiếng Việt ngay khi tải
+getgenv().RonneiTranslateVN = true -- Mặc định bật tiếng Việt
 
 -- 2. Bảng màu tương phản cao (High-Contrast Slate Theme)
 local THEME = {
@@ -49,18 +49,18 @@ local function isPureMetric(txt)
     return false
 end
 
--- 4. Bộ chuyển ngữ chuyên sâu: Xử lý chuỗi động, đoạn văn mô tả dài & lỗi trộn EN/VN
+-- 4. Bộ chuyển ngữ chuyên sâu: Dịch chuỗi động, đoạn văn mô tả dài
 local function translateDynamicCounters(txt)
     local res = txt
 
-    -- Xử lý các đoạn mô tả tính năng trộm (khắc phục triệt để các ký tự gạch nối — / - / ·)
+    -- Dịch các đoạn mô tả tính năng trộm
     if res:find("Instant Steal/TP calls the hit in itself") then
         return "Trộm tức thì/TP tự kích hoạt đòn đánh — không cần chờ bảo vệ — sau đó giật trứng về thẳng vùng an toàn, nếu lỗi sẽ tự đi bộ về"
     end
     if res:find("teleport straight to the target instead of running") then
         return "Dịch chuyển thẳng tới mục tiêu thay vì chạy bộ — nhặt tạm trứng gần đó để lấy đà (trứng trả lại, không mất) — cự ly gần vẫn đi bộ"
     end
-    if (res:find("decides what counts") or res:find("Bộ lọc")) and res:find("takes the most valuable") then
+    if (res:find("decides what counts") or res:find("Bộ lọc") or res:find("Filters")) and res:find("takes the most valuable") then
         return "Tab Bộ lọc quyết định điều kiện hợp lệ — sau đó lấy quả giá trị cao nhất khớp lọc"
     end
     if res:find("IN PLAY: all areas") then
@@ -87,9 +87,8 @@ local function translateDynamicCounters(txt)
     return res
 end
 
--- 5. Từ điển dịch tiếng Việt chuẩn xác 100%
+-- 5. Từ điển dịch tiếng Việt đầy đủ 100%
 local fullTransTable = {
-    -- Tính năng Steal mới cập nhật
     ["Steal Method"] = "Phương thức trộm",
     ["Instant Steal/TP"] = "Trộm tức thì / TP",
     ["Instant TP to the egg"] = "Dịch chuyển tức thời tới trứng",
@@ -97,12 +96,10 @@ local fullTransTable = {
     ["when nothing fits your filters, take the most valuable egg out there instead of waiting"] = "khi không có trứng hợp bộ lọc, lấy quả đắt nhất thay vì chờ đợi",
     ["AUTO STEAL"] = "TỰ ĐỘNG TRỘM",
 
-    -- Sidebar / Tabs
     ["Monster"] = "Quái vật", ["Auto Steal"] = "Tự động trộm", ["Filters"] = "Bộ lọc",
     ["Plot"] = "Khu đất", ["Server"] = "Máy chủ", ["Misc"] = "Tính năng phụ",
     ["Webhook"] = "Webhook", ["Settings"] = "Cài đặt",
     
-    -- Headers & Section Titles
     ["EVENT"] = "SỰ KIỆN", ["STEALING"] = "TRỘM TRỨNG", ["YOUR STUFF"] = "ĐỒ CỦA BẠN",
     ["CONFIG"] = "CẤU HÌNH", ["SELLING"] = "BÁN VẬT PHẨM", ["TREADMILL TRAINING"] = "LUYỆN TẬP MÁY CHẠY",
     ["AUTOMATE IT"] = "TỰ ĐỘNG HÓA", ["TARGETING"] = "MỤC TIÊU", ["SPEED"] = "TỐC ĐỘ",
@@ -116,7 +113,6 @@ local fullTransTable = {
     ["EGGS ON THE MAP"] = "TRỨNG TRÊN BẢN ĐỒ", ["EGGS ON YOUR PLOT"] = "TRỨNG TRÊN ĐẤT CỦA BẠN",
     ["STATS PANEL"] = "BẢNG THỐNG KÊ",
 
-    -- Tab Khu đất (Plot) - Trứng, Ấp & Nâng cấp
     ["Auto Place Eggs"] = "Tự động đặt trứng",
     ["Never place this rarity or rarer"] = "Không đặt từ độ hiếm này trở lên",
     ["keeps your best eggs in the bag instead of committing them to a hatch timer"] = "giữ trứng xịn nhất trong túi thay vì đưa vào thời gian đếm ấp",
@@ -131,7 +127,6 @@ local fullTransTable = {
     ["keeps your best pets out at all times - hatch something better and it swaps, even when your pen is full"] = "luôn dùng pet mạnh nhất — mở ra con tốt hơn sẽ tự thay thế kể cả khi chuồng đầy",
     ["Auto Upgrade Trails"] = "Tự nâng cấp vệt sáng (Trails)",
 
-    -- Tab Khu đất (Plot) - Bán (Selling) & Máy chạy (Treadmill)
     ["What selling will never touch"] = "Những thứ không bao giờ bị bán",
     ["favourited · equipped · in the fuse machine · in the pen · placed on your plot"] = "yêu thích · đang trang bị · trong máy ghép · trong chuồng · đặt trên đất",
     ["Sell anything earning under ($/s)"] = "Bán mọi thứ kiếm dưới ($/s)",
@@ -145,7 +140,6 @@ local fullTransTable = {
     ["Train when Tự động trộm is off"] = "Tập khi tắt Tự động trộm",
     ["on = trains whenever there is nothing worth stealing"] = "bật = tập luyện bất cứ khi nào không có gì đáng trộm",
 
-    -- Tab Máy chủ (Server)
     ["Auto Hop"] = "Tự động đổi server", ["Hop now"] = "Đổi server ngay", ["Hop"] = "Đổi ngay",
     ["How hard to look"] = "Độ sâu tìm server", ["Skip full servers"] = "Bỏ qua server đầy",
     ["Reload hub after hopping"] = "Nạp lại hub sau khi đổi",
@@ -158,7 +152,6 @@ local fullTransTable = {
     ["skip servers emptier than this · blank for any"] = "bỏ qua server vắng hơn mức này · để trống để chọn mọi server",
     ["skip servers busier than this · fewer players means less competition for the same eggs · blank for any"] = "bỏ qua server đông hơn mức này · ít người chơi hơn giúp giảm cạnh tranh trứng · để trống để chọn mọi server",
 
-    -- Tab Tính năng phụ (Misc) - ESP, Bay, Hiệu năng
     ["Egg ESP"] = "ESP Trứng",
     ["each egg's $/s, rarity, weight and mutations floating over it · no distance limit"] = "hiển thị $/s, độ hiếm, trọng lượng và đột biến nổi trên quả · không giới hạn cự ly",
     ["Show ESP on"] = "Hiển thị ESP cho",
@@ -188,7 +181,6 @@ local fullTransTable = {
     ["30 is the lowest — under that the speed bypass stops helping"] = "30 là mức thấp nhất — dưới mức đó việc vượt tốc độ sẽ mất tác dụng",
     ["30 is the lowest - under that the speed bypass stops helping"] = "30 là mức thấp nhất — dưới mức đó việc vượt tốc độ sẽ mất tác dụng",
 
-    -- Tab Webhook
     ["Webhook URL"] = "Đường dẫn Webhook",
     ["your channel -> Edit -> Integrations -> Webhooks -> Sao chép URL · sends a test message"] = "kênh của bạn -> Sửa kênh -> Tích hợp -> Webhooks -> Sao chép URL · gửi tin nhắn thử nghiệm",
     ["your channel → Edit → Integrations → Webhooks → Sao chép URL · sends a test message"] = "kênh của bạn -> Sửa kênh -> Tích hợp -> Webhooks -> Sao chép URL · gửi tin nhắn thử nghiệm",
@@ -221,7 +213,6 @@ local fullTransTable = {
     ["off (recommended) - then a config you share cannot give away your channel"] = "tắt (khuyến nghị) — giúp chia sẻ cấu hình mà không bị lộ webhook",
     ["Any"] = "Bất kỳ",
 
-    -- Tab Auto Steal (Trộm trứng)
     ["not used by this mode — switch to Rarity snipe to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa độ hiếm để dùng",
     ["not used by this mode - switch to Rarity snipe to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa độ hiếm để dùng",
     ["not used by this mode — switch to Gen ($/s) snipe to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa Gen ($/s) để dùng",
@@ -238,7 +229,6 @@ local fullTransTable = {
     ["Bypassed Speed"] = "Vượt tốc độ tối đa",
     ["Bypassed speed cap"] = "Vượt tốc độ tối đa cap",
 
-    -- Tab Quái vật (Monster)
     ["Feed him one"] = "Cho quái ăn 1 quả", ["Feed"] = "Cho ăn",
     ["Claim the chest"] = "Nhận rương quái", ["Claim"] = "Nhận rương",
     ["Belly"] = "Bụng quái vật", ["Refresh"] = "Làm mới",
@@ -254,7 +244,6 @@ local fullTransTable = {
     ["turn this off and ur fuel gets planted or sold behind ur back"] = "tắt đi sẽ khiến trứng bị đặt hoặc bán mất",
     ["feeding destroys the egg, so it always picks ur least valuable one"] = "cho ăn sẽ làm mất trứng, luôn chọn quả rẻ nhất",
 
-    -- Tab Bộ lọc (Filters)
     ["Matching right now"] = "Đang khớp điều kiện",
     ["Use rarity filter"] = "Lọc theo độ hiếm", ["Use mutation filter"] = "Lọc theo đột biến",
     ["Minimum weight (Kg)"] = "Trọng lượng tối thiểu (Kg)", ["Clear all"] = "Bỏ chọn tất cả",
@@ -266,7 +255,6 @@ local fullTransTable = {
     ["Jungle"] = "Rừng rậm", ["Snow"] = "Vùng tuyết", ["Volcano"] = "Núi lửa",
     ["Abyss Ocean"] = "Vực biển sâu", ["Prehistoric"] = "Tiền sử",
 
-    -- Tab Cài đặt (Settings)
     ["Import settings"] = "Nhập cài đặt", ["Import"] = "Nhập",
     ["Reset position & size"] = "Đặt lại vị trí & cỡ", ["Reset"] = "Đặt lại",
     ["Export settings"] = "Xuất cài đặt", ["UI scale"] = "Tỷ lệ giao diện",
@@ -274,7 +262,6 @@ local fullTransTable = {
     ["Start minimised"] = "Thu nhỏ khi chạy", ["Search settings..."] = "Tìm kiếm cài đặt...",
     ["Copy"] = "Sao chép",
 
-    -- Độ hiếm (Rarities)
     ["Common"] = "Thường", ["Uncommon"] = "Không phổ biến", ["Rare"] = "Hiếm",
     ["Epic"] = "Sử thi", ["Legendary"] = "Huyền thoại", ["Mythic"] = "Thần thoại",
     ["Cosmic"] = "Vũ trụ", ["Secret"] = "Bí mật", ["Eternal"] = "Vĩnh hằng", ["Divine"] = "Thần thánh"
@@ -292,18 +279,19 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 6. Huy hiệu TikTok: ronnei7.htk với hiệu ứng gradient xoay phát sáng
-local function injectTikTokBadge(headerFrame)
-    if headerFrame:FindFirstChild("RonneiTikTokBadge") then return end
+-- 6. GẮN CỐ ĐỊNH HUY HIỆU TIKTOK: ronnei7.htk LÊN ĐẦU MENU (HEADER)
+local function injectTikTokToHeader(headerFrame)
+    if not headerFrame or headerFrame:FindFirstChild("RonneiTikTokHeaderBadge") then return end
 
     local badge = Instance.new("Frame")
-    badge.Name = "RonneiTikTokBadge"
+    badge.Name = "RonneiTikTokHeaderBadge"
     badge.Size = UDim2.new(0, 168, 0, 26)
-    badge.Position = UDim2.new(0.5, -20, 0.5, 0)
+    -- Căn vào chính giữa khoảng trống của Topbar (giữa tiêu đề và FPS)
+    badge.Position = UDim2.new(0.52, 0, 0.5, 0)
     badge.AnchorPoint = Vector2.new(0.5, 0.5)
     badge.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
     badge.BorderSizePixel = 0
-    badge.ZIndex = 45
+    badge.ZIndex = 60
     badge.Parent = headerFrame
 
     local corner = Instance.new("UICorner", badge)
@@ -328,7 +316,7 @@ local function injectTikTokBadge(headerFrame)
     label.Font = THEME.FontBold
     label.TextSize = 12
     label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    label.ZIndex = 46
+    label.ZIndex = 61
 
     local textGrad = Instance.new("UIGradient", label)
     textGrad.Color = ColorSequence.new({
@@ -337,7 +325,6 @@ local function injectTikTokBadge(headerFrame)
         ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
     })
 
-    -- Luồng hiệu ứng hào quang chuyển động mượt mà
     task.spawn(function()
         local rot = 0
         while badge.Parent do
@@ -349,7 +336,75 @@ local function injectTikTokBadge(headerFrame)
     end)
 end
 
--- 7. Hook Toggle gốc
+-- 7. GẮN CỐ ĐỊNH THANH CHUYỂN NGÔN NGỮ (LUÔN HIỆN 100% Ở MỌI TAB)
+local function ensureLanguageBar(rightPanel)
+    if not rightPanel or rightPanel:FindFirstChild("RonneiLangBarDedicated") then return end
+
+    local langBar = Instance.new("Frame")
+    langBar.Name = "RonneiLangBarDedicated"
+    langBar.Size = UDim2.new(1, -24, 0, 36)
+    langBar.Position = UDim2.new(0, 12, 0, 52) -- Nằm ngay dưới Header
+    langBar.BackgroundColor3 = THEME.Secondary
+    langBar.BorderSizePixel = 0
+    langBar.ZIndex = 35
+    langBar.Parent = rightPanel
+
+    local crn = Instance.new("UICorner", langBar)
+    crn.CornerRadius = UDim.new(0, 8)
+
+    local strk = Instance.new("UIStroke", langBar)
+    strk.Color = THEME.Stroke
+    strk.Thickness = 1.2
+    strk.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+    local lbl = Instance.new("TextLabel", langBar)
+    lbl.Size = UDim2.new(1, -60, 1, 0)
+    lbl.Position = UDim2.new(0, 14, 0, 0)
+    lbl.Text = "ON = Tiếng Việt | OFF = English"
+    lbl.Font = THEME.FontBold
+    lbl.TextSize = 11
+    lbl.TextColor3 = THEME.TextMain
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.BackgroundTransparency = 1
+    lbl.ZIndex = 36
+    lbl:SetAttribute("IsLangToggle", true)
+
+    local btn = Instance.new("TextButton", langBar)
+    btn.Size = UDim2.new(0, 44, 0, 22)
+    btn.Position = UDim2.new(1, -54, 0.5, 0)
+    btn.AnchorPoint = Vector2.new(0, 0.5)
+    btn.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.ToggleOn or THEME.ToggleOff
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.ZIndex = 36
+    btn:SetAttribute("IsLangToggle", true)
+
+    local btnStroke = Instance.new("UIStroke", btn)
+    btnStroke.Color = getgenv().RonneiTranslateVN and THEME.ToggleOnGlow or THEME.Stroke
+    btnStroke.Thickness = 1.2
+
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+
+    local knob = Instance.new("Frame", btn)
+    knob.Size = UDim2.new(0, 16, 0, 16)
+    knob.Position = getgenv().RonneiTranslateVN and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+    knob.AnchorPoint = Vector2.new(0, 0.5)
+    knob.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.KnobOn or THEME.KnobOff
+    knob.BorderSizePixel = 0
+    knob.ZIndex = 37
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    btn.MouseButton1Click:Connect(function()
+        getgenv().RonneiTranslateVN = not getgenv().RonneiTranslateVN
+        local active = getgenv().RonneiTranslateVN
+        btn.BackgroundColor3 = active and THEME.ToggleOn or THEME.ToggleOff
+        btnStroke.Color = active and THEME.ToggleOnGlow or THEME.Stroke
+        knob.BackgroundColor3 = active and THEME.KnobOn or THEME.KnobOff
+        knob.Position = active and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+    end)
+end
+
+-- 8. Hook trực tiếp Toggle gốc
 local function hookToggleElement(track)
     if track:GetAttribute("ToggleHooked") then return end
 
@@ -403,9 +458,9 @@ local function hookToggleElement(track)
     end)
 end
 
--- 8. Nâng cấp đồ họa sắc nét
+-- 9. Nâng cấp đồ họa hiện đại
 local function applyModernVisuals(obj)
-    if obj:GetAttribute("IsLangToggle") or obj.Name == "RonneiTikTokBadge" then return end
+    if obj:GetAttribute("IsLangToggle") or obj.Name == "RonneiTikTokHeaderBadge" or obj.Name == "RonneiLangBarDedicated" or obj:IsDescendantOf(CG:FindFirstChild("RonneiLangBarDedicated") or obj) then return end
 
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
@@ -482,19 +537,31 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 9. Vòng lặp điều phối chính
+-- 10. VÒNG LẶP ĐIỀU PHỐI CHÍNH
 task.spawn(function()
-    local searchReplaced = false
-
     while true do
         pcall(function()
-            local containers = {CoreGui}
+            -- Dọn sạch nút Reset GUIs / Lennon còn sót
+            local allContainers = {CoreGui}
             if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
-                table.insert(containers, LocalPlayer.PlayerGui)
+                table.insert(allContainers, LocalPlayer.PlayerGui)
             end
-            if gethui then table.insert(containers, gethui()) end
+            if gethui then table.insert(allContainers, gethui()) end
 
-            for _, container in ipairs(containers) do
+            for _, cont in ipairs(allContainers) do
+                for _, obj in ipairs(cont:GetDescendants()) do
+                    if obj:IsA("GuiObject") then
+                        local t = (obj:IsA("TextLabel") or obj:IsA("TextButton")) and obj.Text:upper() or ""
+                        local n = obj.Name:lower()
+                        if t:find("RESET GUI") or t:find("LENNON") or (t == "≡" and obj.AbsoluteSize.X < 65) or n:find("lennon") then
+                            obj.Visible = false
+                            obj:Destroy()
+                        end
+                    end
+                end
+            end
+
+            for _, container in ipairs(allContainers) do
                 for _, child in ipairs(container:GetChildren()) do
                     local isHub = false
                     pcall(function()
@@ -507,20 +574,36 @@ task.spawn(function()
                     end)
 
                     if isHub then
-                        -- 9.1. Gắn Huy hiệu TikTok vào thanh Header
+                        -- 10.1. Tìm Topbar và gắn TikTok: ronnei7.htk
                         for _, d in ipairs(child:GetDescendants()) do
                             if d:IsA("TextLabel") and (d.Text == NEW_NAME or d.Text:find("BK's Hub")) then
-                                local header = d.Parent
-                                if header and header:IsA("GuiObject") and header.AbsoluteSize.X >= 250 then
-                                    injectTikTokBadge(header)
+                                local topbar = d.Parent
+                                -- Dò lên đúng khung Topbar lớn
+                                while topbar and topbar.Parent and not topbar.Parent:IsA("ScreenGui") do
+                                    if topbar.AbsoluteSize.X >= 350 and topbar.AbsoluteSize.Y <= 65 then
+                                        break
+                                    end
+                                    topbar = topbar.Parent
+                                end
+                                if topbar then
+                                    injectTikTokToHeader(topbar)
                                 end
                             end
                         end
 
+                        -- 10.2. Tìm Right Panel và gắn thanh ngôn ngữ
+                        for _, p in ipairs(child:GetDescendants()) do
+                            if p:IsA("Frame") and p.AbsoluteSize.X >= 320 and p.AbsoluteSize.Y >= 250 then
+                                -- Đây là panel chứa nội dung bên phải
+                                ensureLanguageBar(p)
+                                break
+                            end
+                        end
+
+                        -- 10.3. Dịch văn bản và làm đẹp
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
-                            -- 9.2. Chuyển ngữ & Làm sạch thương hiệu
                             if desc:IsA("TextLabel") or desc:IsA("TextButton") then
                                 local txt = desc.Text
 
@@ -535,7 +618,7 @@ task.spawn(function()
                                         desc.Visible = false
                                     end
                                 else
-                                    if not desc:GetAttribute("IsLangToggle") and desc.Name ~= "RonneiTikTokBadge" and not isPureMetric(txt) then
+                                    if not desc:GetAttribute("IsLangToggle") and desc.Name ~= "RonneiTikTokHeaderBadge" and not isPureMetric(txt) then
                                         if not desc:GetAttribute("OriginalText") and txt ~= "" then
                                             desc:SetAttribute("OriginalText", txt)
                                         end
@@ -580,7 +663,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 9.3. Thay Avatar Header góc trên bên trái
+                        -- 10.4. Thay Avatar Header góc trên bên trái
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
@@ -590,94 +673,6 @@ task.spawn(function()
                                         if img.Image ~= NEW_IMAGE then
                                             img.Image = NEW_IMAGE
                                         end
-                                    end
-                                end
-                            end
-                        end
-
-                        -- 9.4. Module công tắc chuyển đổi ngôn ngữ
-                        local mainFrame = nil
-                        for _, f in ipairs(child:GetDescendants()) do
-                            if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
-                                mainFrame = f
-                                break
-                            end
-                        end
-
-                        if mainFrame and not searchReplaced then
-                            for _, obj in ipairs(mainFrame:GetDescendants()) do
-                                local isSearch = false
-                                if obj:IsA("TextBox") and (obj.PlaceholderText:find("Search settings") or obj.Text:find("Search settings")) then
-                                    isSearch = true
-                                elseif obj:IsA("TextLabel") and obj.Text:find("Search settings") then
-                                    isSearch = true
-                                end
-
-                                if isSearch then
-                                    local searchBarContainer = obj.Parent
-                                    if searchBarContainer and not searchBarContainer:FindFirstChild("RonneiLangModule") then
-                                        obj.Visible = false
-                                        if obj:IsA("TextBox") then obj.TextEditable = false end
-                                        for _, sibling in ipairs(searchBarContainer:GetChildren()) do
-                                            if sibling:IsA("ImageLabel") or sibling:IsA("TextLabel") or sibling:IsA("TextBox") then
-                                                sibling.Visible = false
-                                            end
-                                        end
-
-                                        local langModule = Instance.new("Frame", searchBarContainer)
-                                        langModule.Name = "RonneiLangModule"
-                                        langModule.Size = UDim2.new(1, 0, 1, 0)
-                                        langModule.BackgroundTransparency = 1
-                                        langModule.ZIndex = 40
-
-                                        local langLabel = Instance.new("TextLabel", langModule)
-                                        langLabel.Name = "LangLabel"
-                                        langLabel.Size = UDim2.new(1, -55, 1, 0)
-                                        langLabel.Position = UDim2.new(0, 12, 0, 0)
-                                        langLabel.Text = "ON = Tiếng Việt | OFF = English"
-                                        langLabel.Font = THEME.FontBold
-                                        langLabel.TextSize = 11
-                                        langLabel.TextColor3 = THEME.TextMain
-                                        langLabel.TextXAlignment = Enum.TextXAlignment.Left
-                                        langLabel.BackgroundTransparency = 1
-                                        langLabel.ZIndex = 41
-                                        langLabel:SetAttribute("IsLangToggle", true)
-
-                                        local sw = Instance.new("TextButton", langModule)
-                                        sw.Size = UDim2.new(0, 42, 0, 22)
-                                        sw.Position = UDim2.new(1, -50, 0.5, 0)
-                                        sw.AnchorPoint = Vector2.new(0, 0.5)
-                                        sw.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.ToggleOn or THEME.ToggleOff
-                                        sw.Text = ""
-                                        sw.AutoButtonColor = false
-                                        sw.ZIndex = 41
-                                        sw:SetAttribute("IsLangToggle", true)
-
-                                        local swStroke = Instance.new("UIStroke", sw)
-                                        swStroke.Color = getgenv().RonneiTranslateVN and THEME.ToggleOnGlow or THEME.Stroke
-                                        swStroke.Thickness = 1.2
-
-                                        Instance.new("UICorner", sw).CornerRadius = UDim.new(1, 0)
-
-                                        local knob = Instance.new("Frame", sw)
-                                        knob.Size = UDim2.new(0, 16, 0, 16)
-                                        knob.Position = getgenv().RonneiTranslateVN and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
-                                        knob.AnchorPoint = Vector2.new(0, 0.5)
-                                        knob.BackgroundColor3 = getgenv().RonneiTranslateVN and THEME.KnobOn or THEME.KnobOff
-                                        knob.BorderSizePixel = 0
-                                        knob.ZIndex = sw.ZIndex + 1
-                                        Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
-
-                                        sw.MouseButton1Click:Connect(function()
-                                            getgenv().RonneiTranslateVN = not getgenv().RonneiTranslateVN
-                                            local active = getgenv().RonneiTranslateVN
-                                            sw.BackgroundColor3 = active and THEME.ToggleOn or THEME.ToggleOff
-                                            swStroke.Color = active and THEME.ToggleOnGlow or THEME.Stroke
-                                            knob.BackgroundColor3 = active and THEME.KnobOn or THEME.KnobOff
-                                            knob.Position = active and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
-                                        end)
-
-                                        searchReplaced = true
                                     end
                                 end
                             end
