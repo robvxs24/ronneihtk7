@@ -1,12 +1,12 @@
 -- ==============================================================================
---  RONNEI HUB - 100% VIETNAMESE + COMPACT KEYLESS BADGE (ZERO OVERLAP)
+--  RONNEI HUB - FIXED HEADER TIKTOK BADGE + SEAMLESS SEARCH-BAR LANG TOGGLE
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- 1. Khởi chạy script gốc Luarmor
+-- 1. Khởi chạy script gốc Luarmor (Đã triệt tiêu 100% Lennon Hub & Best Pet)
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9ee4edde227ac85f50872bf9e4226508.lua"))()
@@ -15,7 +15,7 @@ end)
 
 local NEW_NAME = "Ronnei Hub"
 local NEW_IMAGE = "rbxassetid://125111940452696"
-local BADGE_TEXT = "Keyless"
+local TIKTOK_TAG = "TikTok: ronnei7.htk"
 
 getgenv().RonneiTranslateVN = true
 
@@ -49,7 +49,7 @@ local function isPureMetric(txt)
     return false
 end
 
--- 4. Bộ chuyển ngữ chuỗi động
+-- 4. Bộ chuyển ngữ chuyên sâu: Dịch chuỗi động, mô tả tính năng
 local function translateDynamicCounters(txt)
     local res = txt
 
@@ -79,7 +79,7 @@ local function translateDynamicCounters(txt)
     return res
 end
 
--- 5. Từ điển dịch tiếng Việt 100%
+-- 5. Từ điển dịch tiếng Việt đầy đủ 100%
 local fullTransTable = {
     ["Steal Method"] = "Phương thức trộm",
     ["Instant Steal/TP"] = "Trộm tức thì / TP",
@@ -288,26 +288,17 @@ local function getTrueHeader(hubGui)
     return nil
 end
 
--- 7. GẮN CỐ ĐỊNH HUY HIỆU "KEYLESS" NHỎ GỌN TRÊN ĐẦU MENU (ZERO OVERLAP)
-local function handleKeylessBadge(hubGui)
+-- 7. GẮN CỐ ĐỊNH HUY HIỆU TIKTOK TRÊN ĐẦU MENU VÀ TIÊU DIỆT CÁC HUY HIỆU Ở GIỮA
+local function handleTikTokBadge(hubGui)
     local header = getTrueHeader(hubGui)
     if not header then return end
 
-    -- Tiêu diệt triệt để các badge TikTok cũ nếu còn tồn tại
-    for _, b in ipairs(hubGui:GetDescendants()) do
-        if b.Name == "RonneiTikTokHeaderBadge" or b.Name == "RonneiTikTokBadge" or (b:IsA("TextLabel") and b.Text:find("ronnei7.htk")) then
-            local p = b:IsA("TextLabel") and b.Parent or b
-            p:Destroy()
-        end
-    end
-
-    local existingBadge = header:FindFirstChild("RonneiKeylessBadge")
+    local existingBadge = header:FindFirstChild("RonneiTikTokHeaderBadge")
     if not existingBadge then
         existingBadge = Instance.new("Frame")
-        existingBadge.Name = "RonneiKeylessBadge"
-        existingBadge.Size = UDim2.new(0, 60, 0, 20)
-        -- Căn vào chính giữa khoảng trống, không chạm chữ Ronnei Hub lẫn FPS
-        existingBadge.Position = UDim2.new(0.46, 0, 0.5, 0)
+        existingBadge.Name = "RonneiTikTokHeaderBadge"
+        existingBadge.Size = UDim2.new(0, 160, 0, 24)
+        existingBadge.Position = UDim2.new(0.50, 0, 0.5, 0)
         existingBadge.AnchorPoint = Vector2.new(0.5, 0.5)
         existingBadge.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
         existingBadge.BorderSizePixel = 0
@@ -319,7 +310,7 @@ local function handleKeylessBadge(hubGui)
 
         local stroke = Instance.new("UIStroke", existingBadge)
         stroke.Color = THEME.Accent
-        stroke.Thickness = 1.2
+        stroke.Thickness = 1.4
         stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
         local strokeGrad = Instance.new("UIGradient", stroke)
@@ -332,9 +323,9 @@ local function handleKeylessBadge(hubGui)
         local label = Instance.new("TextLabel", existingBadge)
         label.Size = UDim2.new(1, 0, 1, 0)
         label.BackgroundTransparency = 1
-        label.Text = BADGE_TEXT
+        label.Text = TIKTOK_TAG
         label.Font = THEME.FontBold
-        label.TextSize = 10
+        label.TextSize = 11
         label.TextColor3 = Color3.fromRGB(255, 255, 255)
         label.ZIndex = 51
 
@@ -355,10 +346,21 @@ local function handleKeylessBadge(hubGui)
             end
         end)
     end
+
+    -- Tiêu diệt triệt để bất kỳ chữ TikTok nào sinh nhầm ở các thẻ bên dưới
+    for _, b in ipairs(hubGui:GetDescendants()) do
+        if (b.Name == "RonneiTikTokHeaderBadge" or b.Name == "RonneiTikTokBadge") and b ~= existingBadge then
+            b:Destroy()
+        end
+    end
 end
 
--- 8. THAY THẾ THANH TÌM KIẾM BẰNG CÔNG TẮC NGÔN NGỮ KHỚP VỪA VẶN 100%
+-- 8. THAY THẾ THANH TÌM KIẾM BẰNG (ON = Tiếng Việt | OFF = English) VỪA KHÍT 100%
 local function morphSearchBarToLangToggle(hubGui)
+    -- Xóa bỏ thanh đè thừa cũ nếu có
+    local oldOverlay = hubGui:FindFirstChild("RonneiLangBarDedicated", true)
+    if oldOverlay then oldOverlay:Destroy() end
+
     for _, obj in ipairs(hubGui:GetDescendants()) do
         local isSearch = false
         if obj:IsA("TextBox") then
@@ -382,6 +384,7 @@ local function morphSearchBarToLangToggle(hubGui)
                 obj.Visible = false
                 if obj:IsA("TextBox") then obj.TextEditable = false end
 
+                -- Ẩn các icon kính lúp hoặc text tìm kiếm bên trong container
                 for _, sib in ipairs(searchBarContainer:GetChildren()) do
                     if sib:IsA("GuiObject") and sib.Name ~= "RonneiLangModule" and not sib:IsA("UIStroke") and not sib:IsA("UICorner") then
                         sib.Visible = false
@@ -501,7 +504,7 @@ end
 
 -- 10. Nâng cấp đồ họa hiện đại
 local function applyModernVisuals(obj)
-    if obj:GetAttribute("IsLangToggle") or obj.Name == "RonneiKeylessBadge" or obj.Name == "RonneiLangModule" then return end
+    if obj:GetAttribute("IsLangToggle") or obj.Name == "RonneiTikTokHeaderBadge" then return end
 
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
@@ -615,10 +618,10 @@ task.spawn(function()
                     end)
 
                     if isHub then
-                        -- 11.1. Gắn cố định huy hiệu "Keyless" vào Header (Zero Overlap)
-                        handleKeylessBadge(child)
+                        -- 11.1. Xử lý chính xác TikTok Badge (chỉ ở Header, xóa ở giữa)
+                        handleTikTokBadge(child)
 
-                        -- 11.2. Biến đổi thanh tìm kiếm thành công tắc ngôn ngữ vừa vặn
+                        -- 11.2. Biến đổi thanh tìm kiếm thành công tắc ngôn ngữ khớp 100%
                         morphSearchBarToLangToggle(child)
 
                         -- 11.3. Dịch văn bản và làm đẹp
@@ -639,7 +642,7 @@ task.spawn(function()
                                         desc.Visible = false
                                     end
                                 else
-                                    if not desc:GetAttribute("IsLangToggle") and desc.Name ~= "RonneiKeylessBadge" and not isPureMetric(txt) then
+                                    if not desc:GetAttribute("IsLangToggle") and desc.Name ~= "RonneiTikTokHeaderBadge" and not isPureMetric(txt) then
                                         if not desc:GetAttribute("OriginalText") and txt ~= "" then
                                             desc:SetAttribute("OriginalText", txt)
                                         end
@@ -666,19 +669,6 @@ task.spawn(function()
                                                 desc.Text = desc:GetAttribute("OriginalText")
                                             end
                                         end
-                                    end
-                                end
-                            elseif desc:IsA("TextBox") then
-                                local pl = desc.PlaceholderText
-                                if not desc:GetAttribute("OrigPlaceholder") and pl ~= "" then
-                                    desc:SetAttribute("OrigPlaceholder", pl)
-                                end
-                                local origPl = desc:GetAttribute("OrigPlaceholder") or pl
-                                if getgenv().RonneiTranslateVN then
-                                    desc.PlaceholderText = fullTransTable[origPl] or origPl
-                                else
-                                    if desc:GetAttribute("OrigPlaceholder") then
-                                        desc.PlaceholderText = desc:GetAttribute("OrigPlaceholder")
                                     end
                                 end
                             end
