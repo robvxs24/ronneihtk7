@@ -1,13 +1,12 @@
 -- ==============================================================================
---  RONNEI HUB - 100% VIETNAMESE + DYNAMIC COUNTER TRANSLATOR + HIGH CONTRAST
---  + BEST PET TRACKER (CHÈN VÀO TAB AUTO STEAL)
+--  RONNEI HUB - 100% VIETNAMESE + TIKTOK GLOW BADGE + DYNAMIC TRANSLATION
 -- ==============================================================================
 
 local TweenService = game:GetService("TweenService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
 local LocalPlayer = game:GetService("Players").LocalPlayer
 
--- 1. Khởi chạy script gốc từ Loader Luarmor
+-- 1. Khởi chạy script gốc từ Loader Luarmor (Không chứa bất kỳ code Lennon/BestPet nào)
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/9ee4edde227ac85f50872bf9e4226508.lua"))()
@@ -16,8 +15,9 @@ end)
 
 local NEW_NAME = "Ronnei Hub"
 local NEW_IMAGE = "rbxassetid://125111940452696"
+local TIKTOK_TAG = "TikTok: ronnei7.htk"
 
-getgenv().RonneiTranslateVN = false
+getgenv().RonneiTranslateVN = true -- Mặc định bật tiếng Việt ngay khi tải
 
 -- 2. Bảng màu tương phản cao (High-Contrast Slate Theme)
 local THEME = {
@@ -38,335 +38,6 @@ local THEME = {
     FontBold      = Enum.Font.GothamBold
 }
 
--- ================== BEST PET TRACKER ==================
-
--- Bảng màu theo độ hiếm
-local RARITY_COLORS = {
-    ["Common"] = Color3.fromRGB(150, 150, 150),
-    ["Uncommon"] = Color3.fromRGB(50, 200, 50),
-    ["Rare"] = Color3.fromRGB(50, 100, 255),
-    ["Epic"] = Color3.fromRGB(150, 50, 255),
-    ["Legendary"] = Color3.fromRGB(255, 150, 50),
-    ["Mythic"] = Color3.fromRGB(255, 50, 150),
-    ["Cosmic"] = Color3.fromRGB(100, 255, 255),
-    ["Secret"] = Color3.fromRGB(255, 215, 0),
-    ["Eternal"] = Color3.fromRGB(200, 50, 200),
-    ["Divine"] = Color3.fromRGB(255, 200, 100)
-}
-
-local RARITY_WEIGHT = {
-    ["Common"] = 1,
-    ["Uncommon"] = 2,
-    ["Rare"] = 3,
-    ["Epic"] = 4,
-    ["Legendary"] = 5,
-    ["Mythic"] = 6,
-    ["Cosmic"] = 7,
-    ["Secret"] = 8,
-    ["Eternal"] = 9,
-    ["Divine"] = 10
-}
-
--- Biến lưu pet tốt nhất
-local currentBestPet = {
-    name = "Chưa có",
-    rarity = "Unknown",
-    image = "rbxassetid://125111940452696",
-    tier = 0
-}
-
--- Biến lưu UI elements
-local bestPetElements = {
-    frame = nil,
-    petName = nil,
-    petRarity = nil,
-    petImage = nil,
-    refreshBtn = nil,
-    contentFrame = nil  -- Lưu contentFrame để biết khi nào cần thêm
-}
-
--- Hàm quét pet từ game
-local function scanPets()
-    local petData = {}
-    local targets = {
-        LocalPlayer.leaderstats,
-        LocalPlayer.PlayerGui,
-        LocalPlayer.Character,
-        workspace,
-        game:GetService("ReplicatedStorage")
-    }
-    
-    for _, target in ipairs(targets) do
-        if target then
-            for _, child in pairs(target:GetChildren()) do
-                local name = child.Name
-                if name:find("Pet") or name:find("Egg") then
-                    local rarity = "Unknown"
-                    local image = "rbxassetid://125111940452696"
-                    
-                    for _, sub in pairs(child:GetChildren()) do
-                        if sub.Name:find("Rarity") then
-                            if sub:IsA("TextLabel") or sub:IsA("StringValue") then
-                                local r = sub.Value or sub.Text
-                                if r and r ~= "" then
-                                    rarity = r
-                                    break
-                                end
-                            end
-                        end
-                        if sub:IsA("ImageLabel") and sub.Image ~= "" then
-                            image = sub.Image
-                        end
-                    end
-                    
-                    table.insert(petData, {
-                        name = name,
-                        rarity = rarity,
-                        image = image,
-                        tier = RARITY_WEIGHT[rarity] or 0
-                    })
-                end
-            end
-        end
-    end
-    return petData
-end
-
--- Hàm làm mới best pet
-local function refreshBestPet()
-    local pets = scanPets()
-    local best = nil
-    
-    for _, pet in pairs(pets) do
-        if not best or pet.tier > best.tier then
-            best = pet
-        end
-    end
-    
-    if best and best.tier > 0 then
-        currentBestPet = best
-        -- Cập nhật UI nếu đã tồn tại
-        if bestPetElements.petName then
-            bestPetElements.petName.Text = currentBestPet.name
-        end
-        if bestPetElements.petRarity then
-            bestPetElements.petRarity.Text = "✨ " .. currentBestPet.rarity
-            bestPetElements.petRarity.TextColor3 = RARITY_COLORS[currentBestPet.rarity] or THEME.TextSub
-        end
-        if bestPetElements.petImage and currentBestPet.image and currentBestPet.image ~= "" then
-            bestPetElements.petImage.Image = currentBestPet.image
-        end
-    end
-end
-
--- Hàm chèn Best Pet vào tab Auto Steal
-local function insertBestPetIntoAutoSteal()
-    -- Tìm hub
-    local containers = {CoreGui}
-    if LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui") then
-        table.insert(containers, LocalPlayer.PlayerGui)
-    end
-    if gethui then table.insert(containers, gethui()) end
-    
-    for _, container in ipairs(containers) do
-        for _, child in pairs(container:GetChildren()) do
-            local isHub = false
-            pcall(function()
-                for _, d in pairs(child:GetDescendants()) do
-                    if d:IsA("TextLabel") and (d.Text:find("BK's Hub") or d.Text:find("Steal An Egg") or d.Text:find(NEW_NAME)) then
-                        isHub = true
-                        break
-                    end
-                end
-            end)
-            
-            if isHub then
-                -- Tìm tab Auto Steal
-                local autoStealTab = nil
-                for _, d in pairs(child:GetDescendants()) do
-                    if d:IsA("TextButton") and d.Text:find("Auto Steal") then
-                        autoStealTab = d
-                        break
-                    end
-                end
-                
-                if not autoStealTab then
-                    return false
-                end
-                
-                -- Tìm content frame của tab
-                local tabFrame = autoStealTab.Parent
-                if not tabFrame then return false end
-                
-                local contentFrame = nil
-                for _, d in pairs(tabFrame:GetDescendants()) do
-                    if d:IsA("Frame") and d.Visible == true and d.AbsoluteSize.X > 200 then
-                        contentFrame = d
-                        break
-                    end
-                end
-                
-                if not contentFrame then return false end
-                
-                -- Kiểm tra đã có Best Pet chưa
-                if contentFrame:FindFirstChild("RonneiBestPetSection") then
-                    return true
-                end
-                
-                -- Lưu contentFrame để biết tab đã được chọn
-                bestPetElements.contentFrame = contentFrame
-                
-                -- Tạo Best Pet Section
-                local bestPetFrame = Instance.new("Frame", contentFrame)
-                bestPetFrame.Name = "RonneiBestPetSection"
-                bestPetFrame.Size = UDim2.new(1, -20, 0, 80)
-                bestPetFrame.Position = UDim2.new(0, 10, 0, 10)
-                bestPetFrame.BackgroundColor3 = THEME.Secondary
-                bestPetFrame.BackgroundTransparency = 0.3
-                bestPetFrame.BorderSizePixel = 0
-                bestPetFrame.ClipsDescendants = true
-                
-                local corner = Instance.new("UICorner", bestPetFrame)
-                corner.CornerRadius = UDim.new(0, 8)
-                
-                local border = Instance.new("UIStroke", bestPetFrame)
-                border.Color = THEME.Stroke
-                border.Thickness = 1
-                border.Transparency = 0.3
-                
-                -- Title
-                local title = Instance.new("TextLabel", bestPetFrame)
-                title.Size = UDim2.new(1, -20, 0, 24)
-                title.Position = UDim2.new(0, 10, 0, 4)
-                title.Text = "🏆 PET TỐT NHẤT"
-                title.TextColor3 = THEME.TextMain
-                title.TextSize = 14
-                title.Font = THEME.FontBold
-                title.TextXAlignment = Enum.TextXAlignment.Left
-                title.BackgroundTransparency = 1
-                
-                -- Divider
-                local divider = Instance.new("Frame", bestPetFrame)
-                divider.Size = UDim2.new(1, -20, 0, 1)
-                divider.Position = UDim2.new(0, 10, 0, 30)
-                divider.BackgroundColor3 = THEME.Stroke
-                divider.BackgroundTransparency = 0.5
-                
-                -- Avatar
-                local avatarFrame = Instance.new("Frame", bestPetFrame)
-                avatarFrame.Size = UDim2.new(0, 44, 0, 44)
-                avatarFrame.Position = UDim2.new(0, 10, 0, 34)
-                avatarFrame.BackgroundColor3 = Color3.fromRGB(38, 42, 56)
-                avatarFrame.BorderSizePixel = 0
-                avatarFrame.ClipsDescendants = true
-                
-                local avatarCorner = Instance.new("UICorner", avatarFrame)
-                avatarCorner.CornerRadius = UDim.new(0, 6)
-                
-                local petImage = Instance.new("ImageLabel", avatarFrame)
-                petImage.Name = "PetImage"
-                petImage.Size = UDim2.new(1, -4, 1, -4)
-                petImage.Position = UDim2.new(0, 2, 0, 2)
-                petImage.BackgroundTransparency = 1
-                petImage.Image = currentBestPet.image
-                petImage.ScaleType = Enum.ScaleType.Fit
-                
-                -- Pet info
-                local petName = Instance.new("TextLabel", bestPetFrame)
-                petName.Name = "PetName"
-                petName.Size = UDim2.new(0.5, 0, 0, 22)
-                petName.Position = UDim2.new(0, 62, 0, 34)
-                petName.Text = currentBestPet.name
-                petName.TextColor3 = THEME.TextMain
-                petName.TextSize = 15
-                petName.Font = THEME.FontBold
-                petName.TextXAlignment = Enum.TextXAlignment.Left
-                petName.BackgroundTransparency = 1
-                
-                local petRarity = Instance.new("TextLabel", bestPetFrame)
-                petRarity.Name = "PetRarity"
-                petRarity.Size = UDim2.new(0.5, 0, 0, 20)
-                petRarity.Position = UDim2.new(0, 62, 0, 56)
-                petRarity.Text = "✨ " .. currentBestPet.rarity
-                petRarity.TextColor3 = RARITY_COLORS[currentBestPet.rarity] or THEME.TextSub
-                petRarity.TextSize = 12
-                petRarity.Font = THEME.Font
-                petRarity.TextXAlignment = Enum.TextXAlignment.Left
-                petRarity.BackgroundTransparency = 1
-                
-                -- Lưu UI elements
-                bestPetElements.frame = bestPetFrame
-                bestPetElements.petName = petName
-                bestPetElements.petRarity = petRarity
-                bestPetElements.petImage = petImage
-                
-                -- Refresh button
-                local refreshBtn = Instance.new("TextButton", bestPetFrame)
-                refreshBtn.Size = UDim2.new(0, 50, 0, 24)
-                refreshBtn.Position = UDim2.new(1, -60, 0, 32)
-                refreshBtn.Text = "⟳ Làm mới"
-                refreshBtn.TextColor3 = THEME.TextMain
-                refreshBtn.TextSize = 11
-                refreshBtn.Font = THEME.Font
-                refreshBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
-                refreshBtn.BorderSizePixel = 0
-                refreshBtn.AutoButtonColor = false
-                
-                local refreshCorner = Instance.new("UICorner", refreshBtn)
-                refreshCorner.CornerRadius = UDim.new(0, 4)
-                
-                refreshBtn.MouseButton1Click:Connect(function()
-                    refreshBtn.Text = "⟳ Đang tải..."
-                    refreshBtn.BackgroundColor3 = Color3.fromRGB(200, 150, 50)
-                    task.delay(0.5, function()
-                        refreshBestPet()
-                        refreshBtn.Text = "⟳ Làm mới"
-                        refreshBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
-                    end)
-                end)
-                
-                bestPetElements.refreshBtn = refreshBtn
-                
-                print("[Ronnei] ✅ Đã chèn Best Pet vào tab Auto Steal!")
-                return true
-            end
-        end
-    end
-    return false
-end
-
--- Chạy chèn Best Pet vào tab Auto Steal (chờ hub load)
-task.spawn(function()
-    local attempts = 0
-    print("[Ronnei] 🔍 Đang tìm hub để chèn Best Pet...")
-    
-    while attempts < 40 do
-        local success = insertBestPetIntoAutoSteal()
-        if success then
-            -- Cập nhật lần đầu
-            refreshBestPet()
-            break
-        end
-        attempts = attempts + 1
-        task.wait(1)
-    end
-    
-    if attempts >= 40 then
-        print("[Ronnei] ❌ Không tìm thấy hub sau 40 giây!")
-        print("[Ronnei] 💡 Hãy đảm bảo hub đã load trước khi chạy script này")
-    end
-end)
-
--- Vòng lặp cập nhật Best Pet (chạy riêng)
-task.spawn(function()
-    while true do
-        pcall(refreshBestPet)
-        task.wait(2)
-    end
-end)
-
--- ================== PHẦN CÒN LẠI CỦA SCRIPT GỐC ==================
-
 -- 3. Kiểm tra các giá trị đo lường thuần túy không được can thiệp
 local function isPureMetric(txt)
     if not txt or txt == "" then return true end
@@ -378,9 +49,24 @@ local function isPureMetric(txt)
     return false
 end
 
--- 4. Bộ chuyển ngữ dòng thống kê / thông báo thời gian thực
+-- 4. Bộ chuyển ngữ chuyên sâu: Xử lý chuỗi động, đoạn văn mô tả dài & lỗi trộn EN/VN
 local function translateDynamicCounters(txt)
     local res = txt
+
+    -- Xử lý các đoạn mô tả tính năng trộm (khắc phục triệt để các ký tự gạch nối — / - / ·)
+    if res:find("Instant Steal/TP calls the hit in itself") then
+        return "Trộm tức thì/TP tự kích hoạt đòn đánh — không cần chờ bảo vệ — sau đó giật trứng về thẳng vùng an toàn, nếu lỗi sẽ tự đi bộ về"
+    end
+    if res:find("teleport straight to the target instead of running") then
+        return "Dịch chuyển thẳng tới mục tiêu thay vì chạy bộ — nhặt tạm trứng gần đó để lấy đà (trứng trả lại, không mất) — cự ly gần vẫn đi bộ"
+    end
+    if (res:find("decides what counts") or res:find("Bộ lọc")) and res:find("takes the most valuable") then
+        return "Tab Bộ lọc quyết định điều kiện hợp lệ — sau đó lấy quả giá trị cao nhất khớp lọc"
+    end
+    if res:find("IN PLAY: all areas") then
+        return "ĐANG CHẠY: tất cả khu vực · không giới hạn khác"
+    end
+
     -- Thống kê trộm & ấp
     res = res:gsub("Idle", "Đang chờ"):gsub("idle", "đang chờ")
     res = res:gsub("Banked", "Đã cất"):gsub("banked", "đã cất")
@@ -401,8 +87,16 @@ local function translateDynamicCounters(txt)
     return res
 end
 
--- 5. Từ điển dịch tiếng Việt đầy đủ 100%
+-- 5. Từ điển dịch tiếng Việt chuẩn xác 100%
 local fullTransTable = {
+    -- Tính năng Steal mới cập nhật
+    ["Steal Method"] = "Phương thức trộm",
+    ["Instant Steal/TP"] = "Trộm tức thì / TP",
+    ["Instant TP to the egg"] = "Dịch chuyển tức thời tới trứng",
+    ["If nothing matches, take the best anyway"] = "Nếu không khớp lọc, vẫn lấy quả tốt nhất",
+    ["when nothing fits your filters, take the most valuable egg out there instead of waiting"] = "khi không có trứng hợp bộ lọc, lấy quả đắt nhất thay vì chờ đợi",
+    ["AUTO STEAL"] = "TỰ ĐỘNG TRỘM",
+
     -- Sidebar / Tabs
     ["Monster"] = "Quái vật", ["Auto Steal"] = "Tự động trộm", ["Filters"] = "Bộ lọc",
     ["Plot"] = "Khu đất", ["Server"] = "Máy chủ", ["Misc"] = "Tính năng phụ",
@@ -528,9 +222,6 @@ local fullTransTable = {
     ["Any"] = "Bất kỳ",
 
     -- Tab Auto Steal (Trộm trứng)
-    ["your Filters tab decides what counts, then takes the most valuable one that does"] = "tab Bộ lọc quyết định điều kiện, sau đó lấy quả giá trị nhất khớp lọc",
-    ["IN PLAY: all areas · no other limits"] = "ĐANG CHẠY: tất cả khu vực · không giới hạn khác",
-    ["IN PLAY: all areas - no other limits"] = "ĐANG CHẠY: tất cả khu vực · không giới hạn khác",
     ["not used by this mode — switch to Rarity snipe to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa độ hiếm để dùng",
     ["not used by this mode - switch to Rarity snipe to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa độ hiếm để dùng",
     ["not used by this mode — switch to Gen ($/s) snipe to use it"] = "không dùng ở chế độ này — chuyển sang Bắn tỉa Gen ($/s) để dùng",
@@ -538,8 +229,6 @@ local fullTransTable = {
     ["move fast enough to reach every area, including the ones you are nowhere near unlocking"] = "di chuyển siêu tốc đến mọi khu vực, kể cả nơi chưa mở khóa",
     ["how fast you travel - very high values get you pulled back, so it eases down on its own"] = "tốc độ di chuyển — chỉnh quá cao sẽ bị giật lùi, script sẽ tự hãm lại",
     ["how fast you travel — very high values get you pulled back, so it eases down on its own"] = "tốc độ di chuyển — chỉnh quá cao sẽ bị giật lùi, script sẽ tự hãm lại",
-    ["If nothing matches, take the best anyway"] = "Nếu không khớp lọc, vẫn lấy quả tốt nhất",
-    ["when nothing fits your filters, take the most valuable egg out there instead of waiting"] = "khi không có trứng hợp bộ lọc, lấy quả đắt nhất thay vì chờ đợi",
     ["What to take"] = "Loại cần lấy",
     ["Best value"] = "Giá trị cao nhất",
     ["Rarity snipe"] = "Bắn tỉa độ hiếm",
@@ -603,7 +292,64 @@ local function safeReplace(text, target, replacement)
     return text
 end
 
--- 6. Hook trực tiếp Toggle gốc theo vị trí thực tế
+-- 6. Huy hiệu TikTok: ronnei7.htk với hiệu ứng gradient xoay phát sáng
+local function injectTikTokBadge(headerFrame)
+    if headerFrame:FindFirstChild("RonneiTikTokBadge") then return end
+
+    local badge = Instance.new("Frame")
+    badge.Name = "RonneiTikTokBadge"
+    badge.Size = UDim2.new(0, 168, 0, 26)
+    badge.Position = UDim2.new(0.5, -20, 0.5, 0)
+    badge.AnchorPoint = Vector2.new(0.5, 0.5)
+    badge.BackgroundColor3 = Color3.fromRGB(18, 22, 32)
+    badge.BorderSizePixel = 0
+    badge.ZIndex = 45
+    badge.Parent = headerFrame
+
+    local corner = Instance.new("UICorner", badge)
+    corner.CornerRadius = UDim.new(1, 0)
+
+    local stroke = Instance.new("UIStroke", badge)
+    stroke.Color = THEME.Accent
+    stroke.Thickness = 1.6
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+    local strokeGrad = Instance.new("UIGradient", stroke)
+    strokeGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 230, 120)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 215, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 230, 120))
+    })
+
+    local label = Instance.new("TextLabel", badge)
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = TIKTOK_TAG
+    label.Font = THEME.FontBold
+    label.TextSize = 12
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.ZIndex = 46
+
+    local textGrad = Instance.new("UIGradient", label)
+    textGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(140, 255, 210)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255))
+    })
+
+    -- Luồng hiệu ứng hào quang chuyển động mượt mà
+    task.spawn(function()
+        local rot = 0
+        while badge.Parent do
+            rot = (rot + 3) % 360
+            strokeGrad.Rotation = rot
+            textGrad.Rotation = rot
+            task.wait(0.03)
+        end
+    end)
+end
+
+-- 7. Hook Toggle gốc
 local function hookToggleElement(track)
     if track:GetAttribute("ToggleHooked") then return end
 
@@ -657,9 +403,9 @@ local function hookToggleElement(track)
     end)
 end
 
--- 7. Nâng cấp đồ họa sáng sủa & tối ưu độ sắc nét font chữ
+-- 8. Nâng cấp đồ họa sắc nét
 local function applyModernVisuals(obj)
-    if obj:GetAttribute("IsLangToggle") then return end
+    if obj:GetAttribute("IsLangToggle") or obj.Name == "RonneiTikTokBadge" then return end
 
     if (obj:IsA("Frame") or obj:IsA("GuiButton")) and not obj:GetAttribute("ToggleHooked") then
         local sz = obj.AbsoluteSize
@@ -736,7 +482,7 @@ local function applyModernVisuals(obj)
     end
 end
 
--- 8. Điều phối vòng lặp chính
+-- 9. Vòng lặp điều phối chính
 task.spawn(function()
     local searchReplaced = false
 
@@ -761,10 +507,20 @@ task.spawn(function()
                     end)
 
                     if isHub then
+                        -- 9.1. Gắn Huy hiệu TikTok vào thanh Header
+                        for _, d in ipairs(child:GetDescendants()) do
+                            if d:IsA("TextLabel") and (d.Text == NEW_NAME or d.Text:find("BK's Hub")) then
+                                local header = d.Parent
+                                if header and header:IsA("GuiObject") and header.AbsoluteSize.X >= 250 then
+                                    injectTikTokBadge(header)
+                                end
+                            end
+                        end
+
                         for _, desc in ipairs(child:GetDescendants()) do
                             pcall(applyModernVisuals, desc)
 
-                            -- 8.1. Dịch văn bản
+                            -- 9.2. Chuyển ngữ & Làm sạch thương hiệu
                             if desc:IsA("TextLabel") or desc:IsA("TextButton") then
                                 local txt = desc.Text
 
@@ -779,38 +535,31 @@ task.spawn(function()
                                         desc.Visible = false
                                     end
                                 else
-                                    if not desc:GetAttribute("IsLangToggle") and not isPureMetric(txt) then
-                                        local low = txt:lower()
-                                        -- Xử lý chuỗi động
-                                        if low:find("placed") or low:find("hatched") or low:find("banked") or low:find("lost") 
-                                           or low:find("re%-grabs") or low:find("idle") or low:find("training") or low:find("quietened") 
-                                           or (low:find("pages") and low:find("server")) then
-                                            if getgenv().RonneiTranslateVN then
-                                                desc.Text = translateDynamicCounters(txt)
+                                    if not desc:GetAttribute("IsLangToggle") and desc.Name ~= "RonneiTikTokBadge" and not isPureMetric(txt) then
+                                        if not desc:GetAttribute("OriginalText") and txt ~= "" then
+                                            desc:SetAttribute("OriginalText", txt)
+                                        end
+
+                                        local original = desc:GetAttribute("OriginalText") or txt
+
+                                        if getgenv().RonneiTranslateVN then
+                                            local dynamicText = translateDynamicCounters(original)
+                                            if dynamicText ~= original then
+                                                desc.Text = dynamicText
+                                            elseif fullTransTable[original] then
+                                                desc.Text = fullTransTable[original]
+                                            else
+                                                local translatedText = original
+                                                for _, en in ipairs(sortedKeys) do
+                                                    if string.find(translatedText, en, 1, true) then
+                                                        translatedText = safeReplace(translatedText, en, fullTransTable[en])
+                                                    end
+                                                end
+                                                desc.Text = translatedText
                                             end
                                         else
-                                            if not desc:GetAttribute("OriginalText") and txt ~= "" then
-                                                desc:SetAttribute("OriginalText", txt)
-                                            end
-
-                                            local original = desc:GetAttribute("OriginalText") or txt
-
-                                            if getgenv().RonneiTranslateVN then
-                                                if fullTransTable[original] then
-                                                    desc.Text = fullTransTable[original]
-                                                else
-                                                    local translatedText = original
-                                                    for _, en in ipairs(sortedKeys) do
-                                                        if string.find(translatedText, en, 1, true) then
-                                                            translatedText = safeReplace(translatedText, en, fullTransTable[en])
-                                                        end
-                                                    end
-                                                    desc.Text = translatedText
-                                                end
-                                            else
-                                                if desc:GetAttribute("OriginalText") then
-                                                    desc.Text = desc:GetAttribute("OriginalText")
-                                                end
+                                            if desc:GetAttribute("OriginalText") then
+                                                desc.Text = desc:GetAttribute("OriginalText")
                                             end
                                         end
                                     end
@@ -831,7 +580,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 8.2. Avatar
+                        -- 9.3. Thay Avatar Header góc trên bên trái
                         for _, img in ipairs(child:GetDescendants()) do
                             if img:IsA("ImageLabel") or img:IsA("ImageButton") then
                                 local sz = img.AbsoluteSize
@@ -846,7 +595,7 @@ task.spawn(function()
                             end
                         end
 
-                        -- 8.3. Module nút gạt ngôn ngữ
+                        -- 9.4. Module công tắc chuyển đổi ngôn ngữ
                         local mainFrame = nil
                         for _, f in ipairs(child:GetDescendants()) do
                             if f:IsA("Frame") and f.AbsoluteSize.X >= 300 and f.AbsoluteSize.Y >= 200 then
@@ -937,6 +686,6 @@ task.spawn(function()
                 end
             end
         end)
-        task.wait(0.35)
+        task.wait(0.3)
     end
 end)
